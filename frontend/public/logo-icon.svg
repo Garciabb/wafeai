@@ -1,0 +1,8 @@
+<svg viewBox="0 0 88 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Banda izquierda exterior: paralelogramo grueso -->
+  <path d="M4 5 L22 5 L50 57 L32 57 Z" fill="white"/>
+  <!-- Banda izquierda interior: converge al mismo punto -->
+  <path d="M28 5 L42 5 L50 57 L40 29 Z" fill="white"/>
+  <!-- Banda derecha: forma la V -->
+  <path d="M50 5 L70 5 L50 57 L40 29 Z" fill="white"/>
+</svg>

@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wafeai_postgres
+    environment:
+      POSTGRES_USER: wafeai
+      POSTGRES_PASSWORD: wafeai123
+      POSTGRES_DB: wafeai_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - wafeai_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: wafeai_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@wafeai.co
+      PGADMIN_DEFAULT_PASSWORD: wafeai123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  wafeai_pgdata:
