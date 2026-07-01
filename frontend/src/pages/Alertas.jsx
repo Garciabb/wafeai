@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Bell, CheckCheck, Filter, AlertTriangle, Info, Zap, Loader2, Phone, MessageSquare, X, Copy } from 'lucide-react'
+import { Bell, CheckCheck, Filter, AlertTriangle, Info, Zap, Phone, MessageSquare, X, Copy } from 'lucide-react'
 import { SkeletonBlock } from '../components/Skeleton'
 import { useToast } from '../context/ToastContext'
 import { useFocusTrap } from '../hooks/useFocusTrap'
@@ -34,8 +34,7 @@ export default function Alertas() {
   const [filtro, setFiltro] = useState('')
   const [soloNoLeidas, setSoloNoLeidas] = useState(false)
 
-  // Estado del modal WhatsApp
-  const [waModal, setWaModal]     = useState(null)   // alerta activa o null
+  const [waModal, setWaModal]     = useState(null)
   const [waMensaje, setWaMensaje] = useState('')
 
   const modalRef = useFocusTrap(!!waModal)
@@ -55,7 +54,6 @@ export default function Alertas() {
 
   useEffect(() => { cargar() }, [soloNoLeidas, filtro]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cerrar modal con Escape
   useEffect(() => {
     if (!waModal) return
     const onEsc = (e) => { if (e.key === 'Escape') setWaModal(null) }
@@ -119,6 +117,100 @@ export default function Alertas() {
   }
 
   const noLeidas = alertas.filter(a => !a.leida).length
+  const urgentes = alertas.filter(a => a.prioridad === 'urgente' && !a.leida)
+
+  const gruposPrioridad = {
+    urgente: alertas.filter(a => a.prioridad === 'urgente'),
+    media:   alertas.filter(a => a.prioridad === 'media'),
+    baja:    alertas.filter(a => a.prioridad === 'baja'),
+  }
+
+  const renderAlerta = (a) => {
+    const { cls, icono: Icono } = PRIORIDAD_CONFIG[a.prioridad] || PRIORIDAD_CONFIG.baja
+    return (
+      <li
+        key={a.id}
+        className={`card flex items-start gap-4 transition-opacity ${!a.leida ? '' : 'opacity-50'}`}
+        aria-label={`Alerta ${a.prioridad}: ${a.mensaje}`}
+      >
+        <div className={`p-2 flex-shrink-0 ${cls}`} style={{ borderRadius: 6, border: '1px solid' }} aria-hidden="true">
+          <Icono size={13} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className={`text-xs px-2 py-0.5 font-dm ${cls}`} style={{ borderRadius: 4, border: '1px solid' }}>
+              {TIPO_LABEL[a.tipo] || a.tipo}
+            </span>
+            <span className="text-xs font-dm" style={{ color: 'var(--color-text-secondary)' }}>{a.socio}</span>
+            {!a.leida && (
+              <span
+                className="w-1.5 h-1.5"
+                style={{ background: 'var(--color-accent)', borderRadius: 2 }}
+                aria-label="No leída"
+              />
+            )}
+            {a.prioridad === 'urgente' && (
+              <span className="text-xs px-2 py-0.5 font-dm font-semibold"
+                style={{ background: 'rgba(255,68,85,0.12)', color: '#FF6B7A', borderRadius: 4 }}>
+                ⏱ ~38 días
+              </span>
+            )}
+          </div>
+          <p className="text-sm font-dm leading-relaxed" style={{ color: 'var(--color-text-primary)' }}>
+            {a.mensaje}
+          </p>
+          <p className="text-xs mt-1 font-dm" style={{ color: '#444' }}>
+            {a.fecha ? new Date(a.fecha).toLocaleString('es-CO') : '—'}
+          </p>
+
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => llamar(a)}
+              className="flex items-center gap-1 text-xs px-2 py-1 font-dm transition-colors"
+              style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)', background: 'transparent' }}
+              onMouseOver={e => { e.currentTarget.style.color = '#00E5A0'; e.currentTarget.style.borderColor = '#00E5A0' }}
+              onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
+              aria-label={`Llamar a ${a.socio}`}
+            >
+              <Phone size={11} aria-hidden="true" /> Llamar
+            </button>
+            <button
+              onClick={() => abrirModalWa(a)}
+              className="flex items-center gap-1 text-xs px-2 py-1 font-dm transition-colors"
+              style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)', background: 'transparent' }}
+              onMouseOver={e => { e.currentTarget.style.color = '#25D366'; e.currentTarget.style.borderColor = '#25D366' }}
+              onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
+              aria-label={`Enviar WhatsApp a ${a.socio}`}
+            >
+              <MessageSquare size={11} aria-hidden="true" /> WhatsApp
+            </button>
+            <button
+              onClick={() => gestionar(a.id)}
+              className="flex items-center gap-1 text-xs px-2 py-1 font-dm transition-colors"
+              style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)', background: 'transparent' }}
+              onMouseOver={e => { e.currentTarget.style.color = 'var(--color-accent)'; e.currentTarget.style.borderColor = 'var(--color-accent)' }}
+              onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
+              aria-label={`Gestionar alerta de ${a.socio}`}
+            >
+              <CheckCheck size={11} aria-hidden="true" /> Gestionar
+            </button>
+          </div>
+        </div>
+        {!a.leida && (
+          <button
+            onClick={() => marcarLeida(a.id)}
+            className="flex-shrink-0 transition-colors p-1"
+            style={{ color: '#444' }}
+            aria-label={`Marcar alerta de ${a.socio} como leída`}
+            onMouseOver={e => e.currentTarget.style.color = 'var(--color-accent)'}
+            onMouseOut={e => e.currentTarget.style.color = '#444'}
+          >
+            <CheckCheck size={14} aria-hidden="true" />
+          </button>
+        )}
+      </li>
+    )
+  }
 
   return (
     <div className="p-8 animate-fade-in">
@@ -152,6 +244,20 @@ export default function Alertas() {
           </button>
         )}
       </div>
+
+      {/* Banner urgente */}
+      {!cargando && urgentes.length > 0 && !filtro && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 mb-6 text-sm font-dm font-medium"
+          style={{ background: 'rgba(255,68,85,0.08)', border: '1px solid rgba(255,68,85,0.25)', borderRadius: 8, color: '#FF6B7A' }}
+          role="alert"
+        >
+          <AlertTriangle size={16} aria-hidden="true" />
+          <span>
+            <strong>{urgentes.length} alerta{urgentes.length > 1 ? 's urgentes' : ' urgente'}</strong> requiere{urgentes.length > 1 ? 'n' : ''} acción inmediata — ventana de intervención: próximos 38 días.
+          </span>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-2 mb-6" role="group" aria-label="Filtros de alertas">
@@ -214,96 +320,38 @@ export default function Alertas() {
               No hay alertas {soloNoLeidas ? 'no leídas' : filtro ? `de prioridad ${filtro}` : ''}
             </p>
           </div>
-        ) : (
+        ) : filtro ? (
           <ul className="space-y-2" role="list">
-            {alertas.map(a => {
-              const { cls, icono: Icono } = PRIORIDAD_CONFIG[a.prioridad] || PRIORIDAD_CONFIG.baja
+            {alertas.map(renderAlerta)}
+          </ul>
+        ) : (
+          <div className="space-y-6">
+            {(['urgente', 'media', 'baja']).map(p => {
+              const grupo = gruposPrioridad[p] || []
+              if (grupo.length === 0) return null
+              const { label } = PRIORIDAD_CONFIG[p]
+              const colorHeader = p === 'urgente' ? '#FF6B7A' : p === 'media' ? '#FFB800' : '#00E5A0'
               return (
-                <li
-                  key={a.id}
-                  className={`card flex items-start gap-4 transition-opacity ${!a.leida ? '' : 'opacity-50'}`}
-                  aria-label={`Alerta ${a.prioridad}: ${a.mensaje}`}
-                >
-                  <div className={`p-2 flex-shrink-0 ${cls}`} style={{ borderRadius: 6, border: '1px solid' }} aria-hidden="true">
-                    <Icono size={13} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className={`text-xs px-2 py-0.5 font-dm ${cls}`} style={{ borderRadius: 4, border: '1px solid' }}>
-                        {TIPO_LABEL[a.tipo] || a.tipo}
-                      </span>
-                      <span className="text-xs font-dm" style={{ color: 'var(--color-text-secondary)' }}>{a.socio}</span>
-                      {!a.leida && (
-                        <span
-                          className="w-1.5 h-1.5"
-                          style={{ background: 'var(--color-accent)', borderRadius: 2 }}
-                          aria-label="No leída"
-                        />
-                      )}
-                      {a.prioridad === 'urgente' && (
-                        <span className="text-xs px-2 py-0.5 font-dm font-semibold"
-                          style={{ background: 'rgba(255,68,85,0.12)', color: '#FF6B7A', borderRadius: 4 }}>
-                          ⏱ ~38 días
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm font-dm leading-relaxed" style={{ color: 'var(--color-text-primary)' }}>
-                      {a.mensaje}
-                    </p>
-                    <p className="text-xs mt-1 font-dm" style={{ color: '#444' }}>
-                      {a.fecha ? new Date(a.fecha).toLocaleString('es-CO') : '—'}
-                    </p>
-
-                    {/* Botones de acción */}
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => llamar(a)}
-                        className="flex items-center gap-1 text-xs px-2 py-1 font-dm transition-colors"
-                        style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)', background: 'transparent' }}
-                        onMouseOver={e => { e.currentTarget.style.color = '#00E5A0'; e.currentTarget.style.borderColor = '#00E5A0' }}
-                        onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
-                        aria-label={`Llamar a ${a.socio}`}
-                      >
-                        <Phone size={11} aria-hidden="true" /> Llamar
-                      </button>
-                      <button
-                        onClick={() => abrirModalWa(a)}
-                        className="flex items-center gap-1 text-xs px-2 py-1 font-dm transition-colors"
-                        style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)', background: 'transparent' }}
-                        onMouseOver={e => { e.currentTarget.style.color = '#25D366'; e.currentTarget.style.borderColor = '#25D366' }}
-                        onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
-                        aria-label={`Enviar WhatsApp a ${a.socio}`}
-                      >
-                        <MessageSquare size={11} aria-hidden="true" /> WhatsApp
-                      </button>
-                      <button
-                        onClick={() => gestionar(a.id)}
-                        className="flex items-center gap-1 text-xs px-2 py-1 font-dm transition-colors"
-                        style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)', background: 'transparent' }}
-                        onMouseOver={e => { e.currentTarget.style.color = 'var(--color-accent)'; e.currentTarget.style.borderColor = 'var(--color-accent)' }}
-                        onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
-                        aria-label={`Gestionar alerta de ${a.socio}`}
-                      >
-                        <CheckCheck size={11} aria-hidden="true" /> Gestionar
-                      </button>
-                    </div>
-                  </div>
-                  {!a.leida && (
-                    <button
-                      onClick={() => marcarLeida(a.id)}
-                      className="flex-shrink-0 transition-colors p-1"
-                      style={{ color: '#444' }}
-                      aria-label={`Marcar alerta de ${a.socio} como leída`}
-                      onMouseOver={e => e.currentTarget.style.color = 'var(--color-accent)'}
-                      onMouseOut={e => e.currentTarget.style.color = '#444'}
+                <div key={p}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-xs font-dm font-semibold uppercase tracking-wider" style={{ color: colorHeader }}>
+                      {label}
+                    </span>
+                    <span
+                      className="text-xs font-dm px-2 py-0.5"
+                      style={{ background: `${colorHeader}18`, color: colorHeader, borderRadius: 4 }}
                     >
-                      <CheckCheck size={14} aria-hidden="true" />
-                    </button>
-                  )}
-                </li>
+                      {grupo.length}
+                    </span>
+                    <div className="flex-1 h-px" style={{ background: `${colorHeader}20` }} />
+                  </div>
+                  <ul className="space-y-2" role="list">
+                    {grupo.map(renderAlerta)}
+                  </ul>
+                </div>
               )
             })}
-          </ul>
+          </div>
         )}
       </div>
 
@@ -323,7 +371,6 @@ export default function Alertas() {
             className="card w-full max-w-md mx-4"
             style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6)', border: '1px solid #1A1A1A' }}
           >
-            {/* Cabecera */}
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h2 id="wa-modal-title" className="font-syne font-semibold" style={{ color: 'var(--color-text-primary)' }}>
@@ -345,7 +392,6 @@ export default function Alertas() {
               </button>
             </div>
 
-            {/* Contexto de la alerta */}
             <div
               className="mb-4 px-3 py-2.5 rounded text-xs font-dm leading-relaxed"
               style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
@@ -353,7 +399,6 @@ export default function Alertas() {
               {waModal.mensaje}
             </div>
 
-            {/* Textarea */}
             <label htmlFor="wa-textarea" className="block text-xs font-dm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
               Mensaje a enviar
             </label>
@@ -376,7 +421,6 @@ export default function Alertas() {
               </span>
             </div>
 
-            {/* Botones */}
             <div className="flex gap-3">
               <button
                 onClick={copiarMensaje}

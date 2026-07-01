@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import bcrypt
@@ -48,9 +49,20 @@ class UsuarioResponse(BaseModel):
     nombre: str
     apellido: str
     rol: str
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+class ActualizarPerfilInput(BaseModel):
+    nombre: str
+    apellido: str
+
+
+class CambiarPasswordInput(BaseModel):
+    password_actual: str
+    password_nueva: str
 
 
 def verificar_password(plain: str, hashed: str) -> bool:
@@ -124,3 +136,35 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
 @router.get("/me", response_model=UsuarioResponse, summary="Perfil del usuario actual")
 def get_me(usuario: Usuario = Depends(get_usuario_actual)):
     return usuario
+
+
+@router.patch("/me", response_model=UsuarioResponse, summary="Actualizar nombre y apellido")
+def actualizar_perfil(
+    data: ActualizarPerfilInput,
+    usuario: Usuario = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+):
+    nombre = data.nombre.strip()
+    apellido = data.apellido.strip()
+    if not nombre or not apellido:
+        raise HTTPException(status_code=422, detail="Nombre y apellido son requeridos")
+    usuario.nombre = nombre
+    usuario.apellido = apellido
+    db.commit()
+    db.refresh(usuario)
+    return usuario
+
+
+@router.post("/cambiar-password", summary="Cambiar contraseña del usuario actual")
+def cambiar_password(
+    data: CambiarPasswordInput,
+    usuario: Usuario = Depends(get_usuario_actual),
+    db: Session = Depends(get_db),
+):
+    if not verificar_password(data.password_actual, usuario.hashed_password):
+        raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+    if len(data.password_nueva) < 8:
+        raise HTTPException(status_code=422, detail="La nueva contraseña debe tener al menos 8 caracteres")
+    usuario.hashed_password = hash_password(data.password_nueva)
+    db.commit()
+    return {"mensaje": "Contraseña actualizada correctamente"}

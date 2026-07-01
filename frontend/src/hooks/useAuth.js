@@ -44,5 +44,13 @@ export function useAuth() {
     setUsuario(null)
   }, [])
 
-  return { usuario, login, logout, cargando, error, autenticado: !!usuario }
+  const actualizarUsuario = useCallback((nuevosDatos) => {
+    setUsuario(prev => {
+      const actualizado = { ...prev, ...nuevosDatos }
+      localStorage.setItem('wafeai_usuario', JSON.stringify(actualizado))
+      return actualizado
+    })
+  }, [])
+
+  return { usuario, login, logout, actualizarUsuario, cargando, error, autenticado: !!usuario }
 }

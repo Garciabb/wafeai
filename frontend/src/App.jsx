@@ -13,6 +13,7 @@ const Prediccion = lazy(() => import('./pages/Prediccion'))
 const Cobranza   = lazy(() => import('./pages/Cobranza'))
 const Alertas    = lazy(() => import('./pages/Alertas'))
 const Simulador  = lazy(() => import('./pages/Simulador'))
+const Perfil     = lazy(() => import('./pages/Perfil'))
 
 function PageLoader() {
   return (
@@ -65,6 +66,9 @@ export default function App() {
             } />
             <Route path="simulador" element={
               <Suspense fallback={<PageLoader />}><Simulador /></Suspense>
+            } />
+            <Route path="perfil" element={
+              <Suspense fallback={<PageLoader />}><Perfil /></Suspense>
             } />
           </Route>
 

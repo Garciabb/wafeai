@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Brain, Loader2, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react'
+import { Brain, Loader2, AlertTriangle, CheckCircle, TrendingUp, Download } from 'lucide-react'
 import RiskBadge from '../components/RiskBadge'
+import { useToast } from '../context/ToastContext'
 import api from '../api/client'
 
 /* Demo: socio AL DÍA pero con señales conductuales de alto riesgo.
@@ -11,6 +12,7 @@ const FORM_DEMO = {
 }
 
 export default function Prediccion() {
+  const toast = useToast()
   const [form, setForm] = useState(FORM_DEMO)
   const [resultado, setResultado] = useState(null)
   const [cargando, setCargando] = useState(false)
@@ -31,8 +33,8 @@ export default function Prediccion() {
         porcentaje_deuda: Number(formData.porcentaje_deuda),
       })
       setResultado(data)
-    } catch (err) {
-      console.error(err)
+    } catch {
+      toast.error('Error al calcular el score. Verifica la conexión.')
     } finally {
       setCargando(false)
     }
@@ -95,13 +97,19 @@ export default function Prediccion() {
         </div>
       )}
 
+      {/* Texto explicativo */}
+      <div className="mb-6 px-4 py-3 rounded-lg text-sm font-dm" style={{ background: 'rgba(0,229,160,0.04)', border: '1px solid rgba(0,229,160,0.12)', color: '#888' }}>
+        <span className="text-[#F0F0EB] font-medium">¿Cómo funciona?</span>{' '}
+        El modelo analiza el comportamiento crediticio del socio — historial de pagos, deuda acumulada, antigüedad — y predice la probabilidad de incumplimiento en los próximos 60 días,{' '}
+        <span className="text-[#00E5A0]">incluso cuando el socio está al día</span>. Así puedes intervenir antes de que ocurra la mora.
+      </div>
+
       <div className="grid grid-cols-2 gap-8">
         {/* Formulario */}
         <div className="card">
           <h2 className="font-syne font-semibold text-[#F0F0EB] mb-1">Calcular score manual</h2>
           <p className="text-[#555] text-xs font-dm mb-5">Ingresa los datos del socio para predecir su riesgo</p>
 
-          {/* Banner explicativo del demo */}
           <div className="mb-4 px-3 py-2 rounded-lg bg-[#00E5A0]/8 border border-[#00E5A0]/20 text-xs font-dm text-[#00E5A0]">
             <span className="font-semibold">Demo predictivo:</span> este socio tiene <strong>0 días de mora</strong> — está al día. El modelo detecta señales conductuales de riesgo futuro.
           </div>
@@ -164,11 +172,13 @@ export default function Prediccion() {
         </div>
 
         {/* Resultado */}
-        <div className="card flex flex-col items-center justify-center min-h-[400px]">
+        <div className="card flex flex-col min-h-[480px]">
           {!resultado ? (
-            <div className="text-center text-[#333]">
-              <Brain size={48} className="mx-auto mb-3 opacity-30" />
-              <p className="font-dm text-sm">Ingresa los datos y calcula el score</p>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center text-[#333]">
+                <Brain size={48} className="mx-auto mb-3 opacity-30" />
+                <p className="font-dm text-sm">Ingresa los datos y calcula el score</p>
+              </div>
             </div>
           ) : (
             <div className="w-full animate-slide-up">
@@ -254,6 +264,30 @@ export default function Prediccion() {
                     ? 'Monitorear de cerca. Enviar recordatorio preventivo de pago en los próximos 15 días.'
                     : 'Perfil saludable. Mantener seguimiento periódico estándar.'}
                 </div>
+
+                {/* Guardar análisis */}
+                <button
+                  onClick={() => {
+                    const lineas = [
+                      `Score de riesgo: ${resultado.score_riesgo}%`,
+                      `Nivel: ${resultado.nivel_riesgo}`,
+                      `Probabilidad incumplimiento: ${(resultado.probabilidad_incumplimiento * 100).toFixed(1)}%`,
+                      `Factores: ${resultado.factores_riesgo.join(' | ')}`,
+                      `Generado: ${new Date().toLocaleString('es-CO')}`,
+                    ]
+                    const blob = new Blob([lineas.join('\n')], { type: 'text/plain;charset=utf-8;' })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `analisis-ia-${new Date().toISOString().slice(0,10)}.txt`
+                    a.click()
+                    URL.revokeObjectURL(url)
+                    toast.success('Análisis guardado')
+                  }}
+                  className="btn-ghost w-full flex items-center justify-center gap-2 text-sm py-2.5 mt-4"
+                >
+                  <Download size={14} aria-hidden="true" /> Guardar análisis
+                </button>
               </div>
             </div>
           )}

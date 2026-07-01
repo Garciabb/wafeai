@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Users, Brain, RefreshCw } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Users, Brain, RefreshCw, Bell, Zap, FileDown } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, ReferenceLine,
@@ -20,6 +21,7 @@ const fmt = (n) => {
 
 export default function Dashboard() {
   const toast = useToast()
+  const navigate = useNavigate()
   const [kpis, setKpis] = useState(null)
   const [evolucion, setEvolucion] = useState([])
   const [riesgoAlto, setRiesgoAlto] = useState([])
@@ -35,7 +37,7 @@ export default function Dashboard() {
       const [kpisR, evolR, riesgoR, actividadR, distR] = await Promise.all([
         api.get('/dashboard/kpis'),
         api.get('/dashboard/evolucion-cartera'),
-        api.get('/dashboard/socios-alto-riesgo?limite=8'),
+        api.get('/dashboard/socios-alto-riesgo?limite=5'),
         api.get('/dashboard/actividad-reciente?limite=10'),
         api.get('/dashboard/resumen-riesgo'),
       ])
@@ -63,9 +65,25 @@ export default function Dashboard() {
     { name: 'Alto',  value: distribucion.alto.cantidad,  color: '#FF4455' },
   ] : []
 
+  const exportarReporte = () => {
+    const filas = [
+      ['Socio', 'Score IA', 'Días mora', 'Saldo'],
+      ...riesgoAlto.map(s => [s.nombre, s.score_riesgo, s.dias_mora, s.saldo_pendiente]),
+    ]
+    const csv = filas.map(r => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `wafeai-riesgo-${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Reporte descargado')
+  }
+
   return (
     <div className="p-8 animate-fade-in">
-      {/* Header — h1 único por página */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold font-syne" style={{ color: 'var(--color-text-primary)' }}>
@@ -86,13 +104,19 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* KPIs */}
+      {/* KPIs — Pérdida Evitable primero */}
       <section aria-label="Indicadores clave de rendimiento">
-        <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
           {cargando ? (
             [1,2,3,4,5].map(i => <SkeletonKPI key={i} />)
           ) : (
             <>
+              <KPICard
+                titulo="Pérdida Evitable"
+                valor={fmt(perdidaEvitable)}
+                subtitulo="Saldo en riesgo ALTO · actúa hoy"
+                icono={TrendingDown}
+              />
               <KPICard titulo="Cartera Total"       valor={fmt(kpis?.cartera_total || 0)}      subtitulo={`${kpis?.total_socios || 0} socios activos`}           icono={DollarSign} />
               <KPICard
                 titulo="Cartera Vencida"
@@ -102,15 +126,44 @@ export default function Dashboard() {
               />
               <KPICard titulo="Tasa de Recupero"    valor={`${kpis?.tasa_recupero || 0}%`}    subtitulo={`${fmt(kpis?.recupero_mes || 0)} recuperado este mes`} icono={TrendingUp} acento />
               <KPICard titulo="Alertas IA Activas"  valor={kpis?.alertas_activas || 0}         subtitulo={`${kpis?.socios_en_riesgo_alto || 0} en riesgo alto`}    icono={Brain} />
-              {/* KPI de urgencia: dinero en riesgo accionable */}
-              <KPICard
-                titulo="Pérdida Evitable"
-                valor={fmt(perdidaEvitable)}
-                subtitulo="Saldo en riesgo ALTO · actúa hoy"
-                icono={TrendingDown}
-              />
             </>
           )}
+        </div>
+      </section>
+
+      {/* Acciones rápidas */}
+      <section aria-label="Acciones rápidas" className="mb-8">
+        <div className="grid grid-cols-3 gap-3">
+          <button
+            onClick={() => navigate('/alertas')}
+            className="flex items-center gap-3 px-5 py-4 text-sm font-dm font-medium transition-colors"
+            style={{ background: 'rgba(255,68,85,0.06)', border: '1px solid rgba(255,68,85,0.2)', borderRadius: 8, color: '#FF6B7A' }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,68,85,0.12)' }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,68,85,0.06)' }}
+          >
+            <Bell size={18} aria-hidden="true" />
+            Ver alertas urgentes
+          </button>
+          <button
+            onClick={exportarReporte}
+            className="flex items-center gap-3 px-5 py-4 text-sm font-dm font-medium transition-colors"
+            style={{ background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', borderRadius: 8, color: '#00E5A0' }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,229,160,0.12)' }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,229,160,0.06)' }}
+          >
+            <FileDown size={18} aria-hidden="true" />
+            Exportar reporte CSV
+          </button>
+          <button
+            onClick={() => navigate('/cobranza')}
+            className="flex items-center gap-3 px-5 py-4 text-sm font-dm font-medium transition-colors"
+            style={{ background: 'rgba(255,184,0,0.06)', border: '1px solid rgba(255,184,0,0.2)', borderRadius: 8, color: '#FFB800' }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,184,0,0.12)' }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,184,0,0.06)' }}
+          >
+            <Zap size={18} aria-hidden="true" />
+            Nueva campaña masiva
+          </button>
         </div>
       </section>
 
@@ -150,7 +203,6 @@ export default function Dashboard() {
                     />
                     <Line type="monotone" dataKey="cartera_total"   stroke="var(--color-text-primary)" strokeWidth={1.5} dot={false} name="Total" />
                     <Line type="monotone" dataKey="cartera_vencida" stroke="var(--color-danger)"        strokeWidth={1.5} dot={false} name="Vencida" />
-                    {/* Benchmark: mora sector cooperativo colombiano = 4.1% de cartera total */}
                     {evolucion.length > 0 && kpis?.cartera_total > 0 && (
                       <ReferenceLine
                         y={kpis.cartera_total * 0.041 / 1_000_000}
@@ -223,19 +275,30 @@ export default function Dashboard() {
       {/* Tabla alto riesgo + feed */}
       <section aria-label="Socios en mayor riesgo y actividad reciente">
         <div className="grid grid-cols-3 gap-6">
-          {/* Tabla */}
+          {/* Tabla simplificada */}
           <div className="col-span-2 card p-0 overflow-hidden">
-            <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
-              <h2 className="font-syne font-semibold text-base" style={{ color: 'var(--color-text-primary)' }}>
-                Socios en Mayor Riesgo
-              </h2>
-              <p className="text-xs font-dm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Predicción IA</p>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <div>
+                <h2 className="font-syne font-semibold text-base" style={{ color: 'var(--color-text-primary)' }}>
+                  Socios en Mayor Riesgo
+                </h2>
+                <p className="text-xs font-dm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Predicción IA — top 5</p>
+              </div>
+              <button
+                onClick={() => navigate('/alertas')}
+                className="text-xs font-dm px-3 py-1.5 transition-colors"
+                style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)' }}
+                onMouseOver={e => { e.currentTarget.style.color = 'var(--color-accent)'; e.currentTarget.style.borderColor = 'var(--color-accent)' }}
+                onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
+              >
+                Ver todas →
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm" role="grid" aria-label="Tabla de socios con mayor riesgo">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    {['Socio', 'Ciudad', 'Score IA', 'Mora', 'Saldo'].map(h => (
+                    {['Socio', 'Score IA', 'Saldo', 'Acción'].map(h => (
                       <th key={h} scope="col" className="px-5 py-3 text-left text-xs font-medium font-dm"
                         style={{ color: 'var(--color-text-secondary)' }}>
                         {h}
@@ -248,7 +311,7 @@ export default function Dashboard() {
                 ) : riesgoAlto.length === 0 ? (
                   <tbody>
                     <tr>
-                      <td colSpan={5} className="px-5 py-10 text-center text-sm font-dm" style={{ color: 'var(--color-text-secondary)' }}>
+                      <td colSpan={4} className="px-5 py-10 text-center text-sm font-dm" style={{ color: 'var(--color-text-secondary)' }}>
                         No hay socios en riesgo alto
                       </td>
                     </tr>
@@ -263,13 +326,21 @@ export default function Dashboard() {
                           <p className="font-medium font-dm text-sm" style={{ color: 'var(--color-text-primary)' }}>{s.nombre}</p>
                           <p className="text-xs font-dm" style={{ color: 'var(--color-text-secondary)' }}>{s.cedula}</p>
                         </td>
-                        <td className="px-5 py-3 text-xs font-dm" style={{ color: 'var(--color-text-secondary)' }}>{s.ciudad}</td>
                         <td className="px-5 py-3"><RiskBadge nivel={s.nivel_riesgo} score={s.score_riesgo} showScore /></td>
-                        <td className="px-5 py-3 text-xs font-dm" style={{ color: s.dias_mora > 30 ? 'var(--color-danger)' : 'var(--color-text-secondary)' }}>
-                          {s.dias_mora}d
-                        </td>
                         <td className="px-5 py-3 text-sm font-syne font-semibold" style={{ color: 'var(--color-accent)' }}>
                           {fmt(s.saldo_pendiente)}
+                        </td>
+                        <td className="px-5 py-3">
+                          <button
+                            onClick={() => navigate('/alertas')}
+                            className="text-xs font-dm px-3 py-1.5 transition-colors"
+                            style={{ background: 'rgba(255,68,85,0.08)', border: '1px solid rgba(255,68,85,0.2)', borderRadius: 4, color: '#FF6B7A' }}
+                            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,68,85,0.15)' }}
+                            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,68,85,0.08)' }}
+                            aria-label={`Actuar sobre ${s.nombre}`}
+                          >
+                            Actuar →
+                          </button>
                         </td>
                       </tr>
                     ))}

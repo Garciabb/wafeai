@@ -1,13 +1,13 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { LayoutDashboard, Users, Brain, MessageSquare, Bell, Calculator, LogOut } from 'lucide-react'
 import Logo from './Logo'
 
 const nav = [
   { to: '/',            icono: LayoutDashboard, label: 'Dashboard' },
+  { to: '/alertas',     icono: Bell,             label: 'Alertas' },
   { to: '/socios',      icono: Users,            label: 'Socios' },
   { to: '/prediccion',  icono: Brain,            label: 'Predicción IA' },
   { to: '/cobranza',    icono: MessageSquare,    label: 'Cobranza' },
-  { to: '/alertas',     icono: Bell,             label: 'Alertas' },
   { to: '/simulador',   icono: Calculator,       label: 'Simulador ROI' },
 ]
 
@@ -62,34 +62,40 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
         ))}
       </nav>
 
-      {/* Usuario */}
+      {/* Usuario — clic para ir a /perfil */}
       <div className="p-3" style={{ borderTop: '1px solid var(--color-border)' }}>
         <div
           className="flex items-center gap-3 px-3 py-2.5"
           style={{ background: 'var(--color-surface-2)', borderRadius: 6 }}
         >
-          <div
-            className="w-8 h-8 flex items-center justify-center text-sm font-bold font-syne flex-shrink-0"
-            style={{
-              background: 'rgba(0,229,160,0.12)',
-              color: 'var(--color-accent)',
-              borderRadius: '50%',
-            }}
-            aria-hidden="true"
+          <Link
+            to="/perfil"
+            className="flex items-center gap-3 flex-1 min-w-0 transition-opacity hover:opacity-80"
+            aria-label="Ver perfil de usuario"
           >
-            {usuario?.nombre?.[0]?.toUpperCase() || 'U'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium font-dm truncate" style={{ color: 'var(--color-text-primary)' }}>
-              {usuario?.nombre} {usuario?.apellido}
-            </p>
-            <p className="text-xs font-dm capitalize" style={{ color: 'var(--color-text-secondary)' }}>
-              {usuario?.rol}
-            </p>
-          </div>
+            <div
+              className="w-8 h-8 flex items-center justify-center text-sm font-bold font-syne flex-shrink-0"
+              style={{
+                background: 'rgba(0,229,160,0.12)',
+                color: 'var(--color-accent)',
+                borderRadius: '50%',
+              }}
+              aria-hidden="true"
+            >
+              {`${usuario?.nombre?.[0] || ''}${usuario?.apellido?.[0] || ''}`.toUpperCase() || 'U'}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium font-dm truncate" style={{ color: 'var(--color-text-primary)' }}>
+                {usuario?.nombre} {usuario?.apellido}
+              </p>
+              <p className="text-xs font-dm capitalize" style={{ color: 'var(--color-text-secondary)' }}>
+                {usuario?.rol}
+              </p>
+            </div>
+          </Link>
           <button
             onClick={onLogout}
-            className="transition-colors duration-150 p-1"
+            className="transition-colors duration-150 p-1 flex-shrink-0"
             style={{ color: '#555' }}
             aria-label="Cerrar sesión"
             title="Cerrar sesión"

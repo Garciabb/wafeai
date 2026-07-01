@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
-import { Mail, MessageSquare, Send, Users, Loader2, CheckCircle, AlertTriangle, Zap } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Mail, MessageSquare, Send, Users, Loader2, CheckCircle, AlertTriangle, Zap, Search, X } from 'lucide-react'
 import api from '../api/client'
 
 const PLANTILLAS = [
@@ -52,13 +52,46 @@ export default function Cobranza() {
   /* ── Estado individual ── */
   const [emailForm, setEmailForm] = useState({ socio_id: '', plantilla: 'recordatorio_pago' })
   const [waForm, setWaForm] = useState({ socio_id: '', mensaje_personalizado: '' })
+  const [socioSeleccionado, setSocioSeleccionado] = useState(null)
+  const [busquedaSocio, setBusquedaSocio] = useState('')
+  const [resultadosBusqueda, setResultadosBusqueda] = useState([])
+  const [buscandoSocio, setBuscandoSocio] = useState(false)
+  const [mostrarResultados, setMostrarResultados] = useState(false)
+
+  /* Búsqueda de socios con debounce */
+  const buscarSocios = useCallback(async (texto) => {
+    if (!texto || texto.length < 2) { setResultadosBusqueda([]); return }
+    setBuscandoSocio(true)
+    try {
+      const { data } = await api.get(`/socios/?busqueda=${encodeURIComponent(texto)}&por_pagina=6`)
+      setResultadosBusqueda(data.socios || [])
+    } catch { setResultadosBusqueda([]) }
+    finally { setBuscandoSocio(false) }
+  }, [])
+
+  useEffect(() => {
+    const t = setTimeout(() => buscarSocios(busquedaSocio), 300)
+    return () => clearTimeout(t)
+  }, [busquedaSocio, buscarSocios])
+
+  const seleccionarSocio = (socio) => {
+    setSocioSeleccionado(socio)
+    const id = String(socio.id)
+    setEmailForm(p => ({ ...p, socio_id: id }))
+    setWaForm(p => ({ ...p, socio_id: id }))
+    setBusquedaSocio('')
+    setResultadosBusqueda([])
+    setMostrarResultados(false)
+  }
 
   /* Precarga el primer socio en mayor riesgo */
   useEffect(() => {
     api.get('/dashboard/socios-alto-riesgo?limite=1')
       .then(({ data }) => {
         if (data.length > 0) {
-          const id = String(data[0].id)
+          const s = data[0]
+          setSocioSeleccionado({ id: s.id, nombre_completo: s.nombre, nivel_riesgo: s.nivel_riesgo })
+          const id = String(s.id)
           setEmailForm(p => ({ ...p, socio_id: id }))
           setWaForm(p => ({ ...p, socio_id: id }))
         }
@@ -320,81 +353,145 @@ export default function Cobranza() {
 
       {/* ═══════════ ENVÍO INDIVIDUAL ═══════════ */}
       {tab === 'individual' && (
-        <div className="grid grid-cols-2 gap-6">
-          {/* Email individual */}
+        <div className="space-y-4">
+          {/* Buscador de socio compartido */}
           <div className="card">
-            <h2 className="font-syne font-semibold text-[#F0F0EB] mb-4 flex items-center gap-2">
-              <Mail size={16} className="text-[#00E5A0]" /> Enviar Email
-            </h2>
-            <form onSubmit={enviarEmail} className="space-y-4">
-              <div>
-                <label className="block text-xs text-[#888] font-dm mb-1.5">ID del Socio</label>
-                <input type="number" className="input text-sm" placeholder="Ej: 1" required
-                  value={emailForm.socio_id} onChange={e => setEmailForm(p => ({ ...p, socio_id: e.target.value }))} />
+            <h2 className="font-syne font-semibold text-[#F0F0EB] mb-3 text-sm">Seleccionar socio</h2>
+            <div className="relative">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
+                <input
+                  className="input pl-9 text-sm pr-8"
+                  placeholder="Buscar por nombre o cédula..."
+                  value={busquedaSocio}
+                  onChange={e => { setBusquedaSocio(e.target.value); setMostrarResultados(true) }}
+                  onFocus={() => setMostrarResultados(true)}
+                />
+                {buscandoSocio && (
+                  <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#555]" />
+                )}
               </div>
-              <div>
-                <label className="block text-xs text-[#888] font-dm mb-1.5">Plantilla</label>
-                <select className="input text-sm" value={emailForm.plantilla}
-                  onChange={e => setEmailForm(p => ({ ...p, plantilla: e.target.value }))}>
-                  {PLANTILLAS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-                </select>
-              </div>
-              <button type="submit" disabled={cargandoIndiv}
-                className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2.5">
-                {cargandoIndiv ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
-                Enviar Email
-              </button>
-              {emailRes && (
-                <div className={`p-3 rounded-lg border text-xs font-dm flex items-center gap-2 ${
-                  emailRes.enviado
-                    ? 'bg-[#00E5A0]/10 border-[#00E5A0]/20 text-[#00E5A0]'
-                    : 'bg-red-500/10 border-red-500/20 text-red-400'
-                }`}>
-                  {emailRes.enviado ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}
-                  {emailRes.enviado
-                    ? 'Email enviado exitosamente.'
-                    : `Error: ${JSON.stringify(emailRes.detalle)}`}
+              {mostrarResultados && resultadosBusqueda.length > 0 && (
+                <div
+                  className="absolute z-20 w-full mt-1 rounded-lg overflow-hidden"
+                  style={{ background: '#111', border: '1px solid var(--color-border)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
+                >
+                  {resultadosBusqueda.map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-dm transition-colors"
+                      style={{ borderBottom: '1px solid #1A1A1A' }}
+                      onMouseOver={e => e.currentTarget.style.background = '#1A1A1A'}
+                      onMouseOut={e => e.currentTarget.style.background = ''}
+                      onClick={() => seleccionarSocio(s)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p style={{ color: '#F0F0EB' }}>{s.nombre_completo}</p>
+                        <p className="text-xs" style={{ color: '#555' }}>{s.cedula} · {s.ciudad}</p>
+                      </div>
+                      <span
+                        className="text-xs px-2 py-0.5 flex-shrink-0"
+                        style={{
+                          background: s.nivel_riesgo === 'alto' ? 'rgba(255,68,85,0.1)' : s.nivel_riesgo === 'medio' ? 'rgba(255,184,0,0.1)' : 'rgba(0,229,160,0.1)',
+                          color: s.nivel_riesgo === 'alto' ? '#FF6B7A' : s.nivel_riesgo === 'medio' ? '#FFB800' : '#00E5A0',
+                          borderRadius: 4,
+                        }}
+                      >
+                        {s.nivel_riesgo}
+                      </span>
+                    </button>
+                  ))}
                 </div>
               )}
-            </form>
+            </div>
+
+            {socioSeleccionado && (
+              <div className="flex items-center justify-between mt-3 px-3 py-2.5 rounded-lg" style={{ background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.15)' }}>
+                <div>
+                  <p className="text-sm font-dm font-medium" style={{ color: '#F0F0EB' }}>{socioSeleccionado.nombre_completo || socioSeleccionado.nombre}</p>
+                  <p className="text-xs font-dm" style={{ color: '#555' }}>ID: {socioSeleccionado.id}</p>
+                </div>
+                <button
+                  onClick={() => { setSocioSeleccionado(null); setEmailForm(p => ({ ...p, socio_id: '' })); setWaForm(p => ({ ...p, socio_id: '' })) }}
+                  className="p-1 transition-colors"
+                  style={{ color: '#555' }}
+                  aria-label="Quitar selección"
+                  onMouseOver={e => e.currentTarget.style.color = '#F0F0EB'}
+                  onMouseOut={e => e.currentTarget.style.color = '#555'}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* WhatsApp individual */}
-          <div className="card">
-            <h2 className="font-syne font-semibold text-[#F0F0EB] mb-4 flex items-center gap-2">
-              <MessageSquare size={16} className="text-[#00E5A0]" /> Enviar WhatsApp
-            </h2>
-            <form onSubmit={enviarWA} className="space-y-4">
-              <div>
-                <label className="block text-xs text-[#888] font-dm mb-1.5">ID del Socio</label>
-                <input type="number" className="input text-sm" placeholder="Ej: 1" required
-                  value={waForm.socio_id} onChange={e => setWaForm(p => ({ ...p, socio_id: e.target.value }))} />
-              </div>
-              <div>
-                <label className="block text-xs text-[#888] font-dm mb-1.5">Mensaje (opcional)</label>
-                <textarea rows={3} className="input text-sm resize-none"
-                  placeholder="Dejar vacio para mensaje automatico..."
-                  value={waForm.mensaje_personalizado}
-                  onChange={e => setWaForm(p => ({ ...p, mensaje_personalizado: e.target.value }))} />
-              </div>
-              <button type="submit" disabled={cargandoIndiv}
-                className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2.5">
-                {cargandoIndiv ? <Loader2 size={14} className="animate-spin" /> : <MessageSquare size={14} />}
-                Enviar WhatsApp
-              </button>
-              {waRes && (
-                <div className={`p-3 rounded-lg border text-xs font-dm flex items-center gap-2 ${
-                  waRes.enviado
-                    ? 'bg-[#00E5A0]/10 border-[#00E5A0]/20 text-[#00E5A0]'
-                    : 'bg-red-500/10 border-red-500/20 text-red-400'
-                }`}>
-                  {waRes.enviado ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}
-                  {waRes.enviado
-                    ? 'WhatsApp enviado exitosamente.'
-                    : 'Error al enviar'}
+          <div className="grid grid-cols-2 gap-6">
+            {/* Email individual */}
+            <div className="card">
+              <h2 className="font-syne font-semibold text-[#F0F0EB] mb-4 flex items-center gap-2">
+                <Mail size={16} className="text-[#00E5A0]" /> Enviar Email
+              </h2>
+              <form onSubmit={enviarEmail} className="space-y-4">
+                <div>
+                  <label className="block text-xs text-[#888] font-dm mb-1.5">Plantilla</label>
+                  <select className="input text-sm" value={emailForm.plantilla}
+                    onChange={e => setEmailForm(p => ({ ...p, plantilla: e.target.value }))}>
+                    {PLANTILLAS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                  </select>
                 </div>
-              )}
-            </form>
+                <button type="submit" disabled={cargandoIndiv || !emailForm.socio_id}
+                  className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2.5 disabled:opacity-40">
+                  {cargandoIndiv ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
+                  {emailForm.socio_id ? 'Enviar Email' : 'Selecciona un socio'}
+                </button>
+                {emailRes && (
+                  <div className={`p-3 rounded-lg border text-xs font-dm flex items-center gap-2 ${
+                    emailRes.enviado
+                      ? 'bg-[#00E5A0]/10 border-[#00E5A0]/20 text-[#00E5A0]'
+                      : 'bg-red-500/10 border-red-500/20 text-red-400'
+                  }`}>
+                    {emailRes.enviado ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}
+                    {emailRes.enviado
+                      ? 'Email enviado exitosamente.'
+                      : 'Error al enviar el email'}
+                  </div>
+                )}
+              </form>
+            </div>
+
+            {/* WhatsApp individual */}
+            <div className="card">
+              <h2 className="font-syne font-semibold text-[#F0F0EB] mb-4 flex items-center gap-2">
+                <MessageSquare size={16} className="text-[#00E5A0]" /> Enviar WhatsApp
+              </h2>
+              <form onSubmit={enviarWA} className="space-y-4">
+                <div>
+                  <label className="block text-xs text-[#888] font-dm mb-1.5">Mensaje (opcional)</label>
+                  <textarea rows={4} className="input text-sm resize-none"
+                    placeholder="Dejar vacío para mensaje automático..."
+                    value={waForm.mensaje_personalizado}
+                    onChange={e => setWaForm(p => ({ ...p, mensaje_personalizado: e.target.value }))} />
+                </div>
+                <button type="submit" disabled={cargandoIndiv || !waForm.socio_id}
+                  className="btn-primary w-full flex items-center justify-center gap-2 text-sm py-2.5 disabled:opacity-40">
+                  {cargandoIndiv ? <Loader2 size={14} className="animate-spin" /> : <MessageSquare size={14} />}
+                  {waForm.socio_id ? 'Enviar WhatsApp' : 'Selecciona un socio'}
+                </button>
+                {waRes && (
+                  <div className={`p-3 rounded-lg border text-xs font-dm flex items-center gap-2 ${
+                    waRes.enviado
+                      ? 'bg-[#00E5A0]/10 border-[#00E5A0]/20 text-[#00E5A0]'
+                      : 'bg-red-500/10 border-red-500/20 text-red-400'
+                  }`}>
+                    {waRes.enviado ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}
+                    {waRes.enviado
+                      ? 'WhatsApp enviado exitosamente.'
+                      : 'Error al enviar el WhatsApp'}
+                  </div>
+                )}
+              </form>
+            </div>
           </div>
         </div>
       )}
