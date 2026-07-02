@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useId } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   Search, Plus, Upload, Download, ChevronLeft, ChevronRight,
   Brain, X, Loader2, CheckCircle, AlertTriangle, MessageSquare,
-  ArrowLeft, Phone, Mail, Send,
+  ArrowLeft, Phone, Mail, Send, User, Paperclip, Bold, Italic, Underline,
 } from 'lucide-react'
 import RiskBadge from '../components/RiskBadge'
 import { SkeletonTable } from '../components/Skeleton'
@@ -410,10 +411,10 @@ function DrawerScoreIA({ socio, onClose }) {
 /* ══════════════════════════════════════════════
    CHAT WHATSAPP DEL SOCIO
 ══════════════════════════════════════════════ */
-function ChatWhatsApp({ socio }) {
+function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlighted = false }) {
   const toast = useToast()
   const [modoIA, setModoIA] = useState(true)
-  const [mensaje, setMensaje] = useState('')
+  const [mensaje, setMensaje] = useState(mensajeInicial)
   const [historial, setHistorial] = useState([])
   const [sugerenciaSeleccionada, setSugerenciaSeleccionada] = useState(-1)
   const [mensajesPersonalizados, setMensajesPersonalizados] = useState([])
@@ -470,6 +471,10 @@ function ChatWhatsApp({ socio }) {
 
   const personalizadasFmt = mensajesPersonalizados.map(m => ({ icono: m.icono || '✏️', label: m.nombre, texto: m.texto }))
   const todasLasSugerencias = [...personalizadasFmt, ...(modoIA ? sugerencias : [])]
+
+  useEffect(() => {
+    if (mensajeInicial && textareaRef.current) ajustarAltura(textareaRef.current)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     try {
@@ -570,6 +575,8 @@ function ChatWhatsApp({ socio }) {
         background: '#0F0F0F', border: '1px solid #1A1A1A', borderRadius: 10,
         display: 'flex', flexDirection: 'column',
         height: 'calc(100vh - 240px)', minHeight: 520, overflow: 'hidden',
+        boxShadow: highlighted ? '0 0 0 1.5px #00E5A0, 0 0 24px rgba(0,229,160,0.15)' : 'none',
+        transition: 'box-shadow 300ms ease',
       }}
     >
       {/* Chat header */}
@@ -894,7 +901,7 @@ function ChatWhatsApp({ socio }) {
       <div style={{ background: '#0D0D0D', borderTop: '1px solid #1A1A1A', padding: '10px 12px', flexShrink: 0 }}>
         <div className="flex items-end gap-3">
           <textarea
-            ref={textareaRef}
+            ref={el => { textareaRef.current = el; if (chatInputRef) chatInputRef.current = el }}
             value={mensaje}
             onChange={e => { setMensaje(e.target.value.slice(0, 1000)); ajustarAltura(e.target) }}
             onKeyDown={handleKeyDown}
@@ -936,16 +943,310 @@ function ChatWhatsApp({ socio }) {
 }
 
 /* ══════════════════════════════════════════════
+   MODAL CORREO DE COBRANZA
+══════════════════════════════════════════════ */
+function ModalCorreo({ socio, onClose, onEnviado }) {
+  const toast = useToast()
+
+  const primerNombre = (socio.nombre_completo || '').split(' ')[0]
+  const saldoFmt = socio.saldo_pendiente != null
+    ? Number(socio.saldo_pendiente).toLocaleString('es-CO')
+    : '0'
+  const tipoCredito = socio.tipo_credito || 'crédito'
+  const diasMora = socio.dias_mora || 0
+
+  const addDays = (n) => {
+    const d = new Date()
+    d.setDate(d.getDate() + n)
+    return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
+  }
+
+  const avanzadas = [
+    {
+      label: 'Notificación formal',
+      asunto: 'URGENTE: Tu crédito requiere atención inmediata',
+      cuerpo: `Estimado/a ${primerNombre},\n\nPor medio del presente correo, le informamos que su obligación de ${tipoCredito} presenta un atraso de ${diasMora} días con un saldo pendiente de $${saldoFmt} COP.\n\nLe solicitamos respetuosamente ponerse en contacto con nosotros antes del ${addDays(5)} para acordar una solución.\n\nDe no recibir respuesta, nos veremos en la obligación de escalar el caso a las instancias correspondientes.\n\nAtentamente,\nDepartamento de Cobranza\nWafeAI`,
+    },
+    {
+      label: 'Oferta de refinanciamiento',
+      asunto: `Refinancia tu deuda antes del ${addDays(7)}`,
+      cuerpo: `Estimado/a ${primerNombre},\n\nComo parte de nuestro compromiso con nuestros socios, le ofrecemos la posibilidad de refinanciar su deuda de ${tipoCredito} bajo condiciones especiales.\n\nEsta oferta está disponible únicamente hasta el ${addDays(7)}. Contáctenos para conocer los detalles y formalizar el proceso.\n\nAtentamente,\nDepartamento de Cobranza\nWafeAI`,
+    },
+    {
+      label: 'Aviso pre-jurídico',
+      asunto: 'Aviso importante sobre su obligación crediticia',
+      cuerpo: `Estimado/a ${primerNombre},\n\nLe comunicamos que su obligación de ${tipoCredito} con saldo pendiente de $${saldoFmt} COP se encuentra en un estado que requiere atención inmediata.\n\nEn cumplimiento de nuestros procedimientos internos, le notificamos que de no regularizarse la situación, el caso será remitido al departamento jurídico.\n\nLe instamos a comunicarse con nosotros a la mayor brevedad posible.\n\nAtentamente,\nDepartamento de Cobranza\nWafeAI`,
+    },
+  ]
+
+  const PLANTILLAS_MAP = {
+    al_dia: [
+      {
+        label: 'Recordatorio amigable',
+        asunto: 'Tu cuota se acerca — Cooperativa',
+        cuerpo: `Hola ${primerNombre},\n\nEsperamos que estés muy bien. Te escribimos para recordarte que tu cuota de ${tipoCredito} tiene fecha próxima de vencimiento.\n\nSi ya realizaste el pago, ignora este mensaje. De lo contrario, recuerda que puedes hacerlo a través de nuestros canales habituales.\n\nCualquier inquietud, estamos para ayudarte.\n\nAtentamente,\nEquipo de Cartera\nWafeAI`,
+      },
+      {
+        label: 'Fidelización',
+        asunto: `¡Gracias por tu puntualidad, ${primerNombre}!`,
+        cuerpo: `Hola ${primerNombre},\n\nQueremos tomarnos un momento para agradecerte tu excelente comportamiento crediticio. Tu puntualidad y responsabilidad son un ejemplo para nuestra comunidad.\n\nRecuerda que manteniendo este historial, puedes acceder a condiciones preferenciales en futuros créditos.\n\nGracias por tu confianza en WafeAI.\n\nAtentamente,\nEquipo de Cartera\nWafeAI`,
+      },
+      {
+        label: 'Beneficio especial',
+        asunto: 'Tienes un beneficio disponible por buen historial',
+        cuerpo: `Hola ${primerNombre},\n\nPor tu excelente historial de pagos, hemos identificado que eres candidato/a a un beneficio especial disponible para nuestros mejores socios.\n\nComunícate con nosotros para conocer los detalles. ¡Esta oportunidad es exclusiva para ti!\n\nAtentamente,\nEquipo de Cartera\nWafeAI`,
+      },
+    ],
+    mora_temprana: [
+      {
+        label: 'Recordatorio de pago',
+        asunto: `Tienes ${diasMora} días de atraso — actúa hoy`,
+        cuerpo: `Hola ${primerNombre},\n\nHemos notado que tu crédito de ${tipoCredito} presenta ${diasMora} días de atraso. Entendemos que pueden surgir imprevistos y queremos ayudarte.\n\nPor favor comunícate con nosotros a la brevedad para regularizar tu situación antes de que genere cargos adicionales.\n\nEstamos disponibles para encontrar la mejor solución juntos.\n\nAtentamente,\nEquipo de Cartera\nWafeAI`,
+      },
+      {
+        label: 'Acuerdo de pago',
+        asunto: 'Propuesta de acuerdo para tu crédito',
+        cuerpo: `Hola ${primerNombre},\n\nQueremos ofrecerte la posibilidad de llegar a un acuerdo de pago flexible para regularizar tu crédito de ${tipoCredito}.\n\nContáctanos antes del ${addDays(5)} y exploraremos opciones ajustadas a tu situación actual.\n\nNo dejes que la mora siga acumulando — podemos ayudarte.\n\nAtentamente,\nEquipo de Cartera\nWafeAI`,
+      },
+      {
+        label: 'Último aviso amable',
+        asunto: 'Evita cargos adicionales en tu crédito',
+        cuerpo: `Hola ${primerNombre},\n\nEste es un recordatorio amable sobre el estado de tu crédito. Tienes la oportunidad de ponerte al día antes de que se generen cargos adicionales.\n\nComunícate con nosotros hoy para encontrar una solución rápida.\n\nAtentamente,\nEquipo de Cartera\nWafeAI`,
+      },
+    ],
+    mora_avanzada: avanzadas,
+    cartera_vencida: avanzadas,
+  }
+
+  const plantillas = PLANTILLAS_MAP[socio.estado_mora] || PLANTILLAS_MAP.al_dia
+
+  const [plantillaIdx, setPlantillaIdx] = useState(0)
+  const [asunto, setAsunto] = useState(plantillas[0].asunto)
+  const [cuerpo, setCuerpo] = useState(plantillas[0].cuerpo)
+  const [cc, setCc] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState(null)
+  const dialogRef = useFocusTrap(true)
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  const seleccionarPlantilla = (idx) => {
+    setPlantillaIdx(idx)
+    setAsunto(plantillas[idx].asunto)
+    setCuerpo(plantillas[idx].cuerpo)
+  }
+
+  const enviar = async () => {
+    setEnviando(true)
+    setError(null)
+    try {
+      await api.post('/cobranza/enviar-email', {
+        socio_id: socio.id,
+        plantilla: diasMora > 30 ? 'mora_urgente' : 'recordatorio_pago',
+        asunto,
+        cuerpo,
+      })
+      toast.success(`Correo enviado a ${socio.email || socio.nombre_completo} ✓`)
+      onEnviado()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Error al enviar el correo')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-correo-title"
+        className="relative w-full max-w-2xl animate-slide-up"
+        style={{
+          background: '#0A0A0A', border: '1px solid #1A1A1A', borderRadius: 12,
+          boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+          maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1A1A1A', flexShrink: 0 }}>
+          <div className="flex items-center gap-3">
+            <Mail size={18} style={{ color: '#00E5A0' }} aria-hidden="true" />
+            <div>
+              <h2 id="modal-correo-title" className="font-syne font-bold" style={{ color: 'var(--color-text-primary)', fontSize: 15 }}>
+                Nuevo correo de cobranza
+              </h2>
+              <p className="font-dm" style={{ color: '#555', fontSize: 11 }}>WafeAI · Canal Email</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 transition-colors"
+            style={{ color: '#555' }}
+            aria-label="Cerrar modal"
+            onMouseOver={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
+            onMouseOut={e => e.currentTarget.style.color = '#555'}
+          >
+            <X size={17} aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Cuerpo scrolleable */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Campos estilo cliente email */}
+          <div>
+            <div className="flex items-center px-6 py-3" style={{ borderBottom: '1px solid #111' }}>
+              <span className="font-dm text-xs flex-shrink-0" style={{ color: '#555', width: 60 }}>Para:</span>
+              {socio.email ? (
+                <span
+                  className="inline-flex items-center gap-1.5 font-dm text-xs px-2 py-1"
+                  style={{ background: 'rgba(0,229,160,0.08)', border: '1px solid rgba(0,229,160,0.2)', borderRadius: 4, color: '#00E5A0' }}
+                >
+                  <User size={10} aria-hidden="true" /> {socio.email}
+                </span>
+              ) : (
+                <span className="font-dm text-xs" style={{ color: '#FF4455' }}>Sin email registrado</span>
+              )}
+            </div>
+            <div className="flex items-center px-6 py-3" style={{ borderBottom: '1px solid #111' }}>
+              <span className="font-dm text-xs flex-shrink-0" style={{ color: '#555', width: 60 }}>De:</span>
+              <span className="font-dm text-xs" style={{ color: '#555' }}>notificaciones@wafeai.co</span>
+            </div>
+            <div className="flex items-center px-6 py-3" style={{ borderBottom: '1px solid #111' }}>
+              <span className="font-dm text-xs flex-shrink-0" style={{ color: '#555', width: 60 }}>Asunto:</span>
+              <input
+                value={asunto}
+                onChange={e => setAsunto(e.target.value)}
+                className="flex-1 font-dm text-sm bg-transparent border-none outline-none"
+                style={{ color: 'var(--color-text-primary)' }}
+                placeholder="Asunto del correo..."
+              />
+            </div>
+            <div className="flex items-center px-6 py-3" style={{ borderBottom: '1px solid #1A1A1A' }}>
+              <span className="font-dm text-xs flex-shrink-0" style={{ color: '#555', width: 60 }}>CC:</span>
+              <input
+                value={cc}
+                onChange={e => setCc(e.target.value)}
+                className="flex-1 font-dm text-sm bg-transparent border-none outline-none"
+                style={{ color: 'var(--color-text-primary)' }}
+                placeholder="Agregar copia..."
+              />
+            </div>
+          </div>
+
+          {/* Chips de plantilla */}
+          <div className="flex items-center gap-3 px-6 py-3" style={{ borderBottom: '1px solid #1A1A1A' }}>
+            <span className="font-dm text-xs flex-shrink-0" style={{ color: '#555' }}>Plantilla:</span>
+            <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+              {plantillas.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => seleccionarPlantilla(i)}
+                  className="font-dm text-xs px-3 py-1.5 flex-shrink-0 transition-all"
+                  style={{
+                    background: plantillaIdx === i ? 'rgba(0,229,160,0.1)' : '#111',
+                    border: `1px solid ${plantillaIdx === i ? 'rgba(0,229,160,0.35)' : '#1A1A1A'}`,
+                    borderRadius: 6,
+                    color: plantillaIdx === i ? '#00E5A0' : '#888',
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Toolbar de formato */}
+          <div className="flex items-center gap-1 px-6 py-2" style={{ borderBottom: '1px solid #1A1A1A' }}>
+            {[{ Icon: Bold, label: 'Negrita' }, { Icon: Italic, label: 'Cursiva' }, { Icon: Underline, label: 'Subrayar' }].map(({ Icon, label }) => (
+              <button
+                key={label}
+                aria-label={label}
+                className="flex items-center justify-center transition-colors"
+                style={{ width: 28, height: 28, background: '#111', border: '1px solid #1A1A1A', borderRadius: 4, color: '#666' }}
+                onMouseOver={e => e.currentTarget.style.color = '#999'}
+                onMouseOut={e => e.currentTarget.style.color = '#666'}
+              >
+                <Icon size={12} aria-hidden="true" />
+              </button>
+            ))}
+            <div style={{ width: 1, height: 16, background: '#222', margin: '0 4px' }} aria-hidden="true" />
+            <button
+              aria-label="Adjuntar archivo"
+              title="Próximamente"
+              disabled
+              className="flex items-center justify-center"
+              style={{ width: 28, height: 28, background: '#111', border: '1px solid #1A1A1A', borderRadius: 4, color: '#333', cursor: 'not-allowed' }}
+            >
+              <Paperclip size={12} aria-hidden="true" />
+            </button>
+          </div>
+
+          {/* Editor del cuerpo */}
+          <div className="px-6 py-4">
+            <textarea
+              value={cuerpo}
+              onChange={e => setCuerpo(e.target.value.slice(0, 2000))}
+              rows={10}
+              className="w-full font-dm resize-none"
+              style={{
+                background: '#0D0D0D', border: '1px solid #1A1A1A', borderRadius: 8,
+                color: '#E0E0E0', lineHeight: 1.7, padding: '14px 16px',
+                outline: 'none', fontSize: 14,
+              }}
+              placeholder="Redacta el cuerpo del correo..."
+            />
+          </div>
+
+          {error && (
+            <div
+              className="mx-6 mb-4 flex items-center gap-2 px-4 py-3 rounded-lg text-xs font-dm"
+              style={{ background: 'rgba(255,68,85,0.08)', border: '1px solid rgba(255,68,85,0.2)', color: '#FF6B7A' }}
+            >
+              <AlertTriangle size={13} aria-hidden="true" /> {error}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{ borderTop: '1px solid #1A1A1A', flexShrink: 0 }}
+        >
+          <span className="font-dm" style={{ color: '#555', fontSize: 11 }}>{cuerpo.length} / 2000 caracteres</span>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="btn-ghost text-sm py-2 px-4">Cancelar</button>
+            <button
+              onClick={enviar}
+              disabled={enviando || !socio.email}
+              className="btn-primary flex items-center gap-2 text-sm py-2 px-4 disabled:opacity-50"
+            >
+              {enviando ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <Send size={14} aria-hidden="true" />}
+              {enviando ? 'Enviando...' : 'Enviar correo'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════
    PANTALLA COMPLETA DEL SOCIO
 ══════════════════════════════════════════════ */
-function SocioDetalle({ socio, onVolver }) {
+function SocioDetalle({ socio, onVolver, mensajeInicial = '' }) {
   const toast = useToast()
   const [detalle, setDetalle] = useState(null)
   const [cargando, setCargando] = useState(true)
-  const [cobranzaEstado, setCobranzaEstado] = useState('idle')
-  const timerRef = useRef(null)
-
-  useEffect(() => () => clearTimeout(timerRef.current), [])
+  const [chatHighlight, setChatHighlight] = useState(false)
+  const [modalCorreo, setModalCorreo] = useState(false)
+  const chatInputRef = useRef(null)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -965,19 +1266,6 @@ function SocioDetalle({ socio, onVolver }) {
     }
     cargar()
   }, [socio.id])
-
-  const iniciarCobranza = async () => {
-    setCobranzaEstado('cargando')
-    try {
-      await api.post('/cobranza/enviar-email', { socio_id: socio.id, plantilla: socio.dias_mora > 30 ? 'mora_urgente' : 'recordatorio_pago' })
-      setCobranzaEstado('enviado')
-      toast.success('Cobranza iniciada correctamente')
-      timerRef.current = setTimeout(() => setCobranzaEstado('idle'), 3000)
-    } catch {
-      toast.error('Error al iniciar la cobranza')
-      setCobranzaEstado('idle')
-    }
-  }
 
   const score = detalle?.score_riesgo ?? socio.score_riesgo ?? 0
   const nivel = detalle?.nivel_riesgo ?? socio.nivel_riesgo ?? 'bajo'
@@ -1011,7 +1299,7 @@ function SocioDetalle({ socio, onVolver }) {
       {/* ── Header bar ── */}
       <div
         className="flex items-center gap-3"
-        style={{ background: '#0A0A0A', borderBottom: '1px solid #1A1A1A', padding: '14px 24px' }}
+        style={{ background: 'rgba(10,10,10,0.92)', borderBottom: '1px solid #1A1A1A', padding: '14px 24px', position: 'sticky', top: 0, zIndex: 10, backdropFilter: 'blur(8px)' }}
       >
         <button onClick={onVolver} className="btn-ghost flex items-center gap-1.5 text-xs py-1.5 px-3 flex-shrink-0">
           <ArrowLeft size={12} aria-hidden="true" /> Socios
@@ -1211,9 +1499,10 @@ function SocioDetalle({ socio, onVolver }) {
                 </button>
                 <button
                   onClick={() => {
-                    const tel = socio.telefono?.replace(/\D/g, '')
-                    if (tel && tel !== '0000000000') window.open(`https://wa.me/57${tel}`, '_blank')
-                    else toast.error('Sin teléfono registrado')
+                    document.getElementById('chat-whatsapp-seccion')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    setChatHighlight(true)
+                    setTimeout(() => chatInputRef.current?.focus(), 400)
+                    setTimeout(() => setChatHighlight(false), 1200)
                   }}
                   className="flex-1 flex items-center justify-center gap-2 py-3 font-dm text-sm transition-all"
                   style={{ background: '#111', border: '1px solid #222', borderRadius: 8, color: '#25D366' }}
@@ -1223,20 +1512,13 @@ function SocioDetalle({ socio, onVolver }) {
                   <MessageSquare size={15} aria-hidden="true" /> WhatsApp
                 </button>
                 <button
-                  onClick={iniciarCobranza}
-                  disabled={cobranzaEstado === 'cargando' || cobranzaEstado === 'enviado'}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 font-dm text-sm transition-all disabled:opacity-50"
-                  style={{
-                    background: cobranzaEstado === 'enviado' ? 'rgba(0,229,160,0.08)' : '#111',
-                    border: `1px solid ${cobranzaEstado === 'enviado' ? 'rgba(0,229,160,0.3)' : '#222'}`,
-                    borderRadius: 8,
-                    color: cobranzaEstado === 'enviado' ? '#00E5A0' : 'var(--color-text-primary)',
-                  }}
-                  onMouseOver={e => { if (cobranzaEstado === 'idle') e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)' }}
-                  onMouseOut={e => { if (cobranzaEstado === 'idle') e.currentTarget.style.borderColor = '#222' }}
+                  onClick={() => setModalCorreo(true)}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 font-dm text-sm transition-all"
+                  style={{ background: '#111', border: '1px solid #222', borderRadius: 8, color: 'var(--color-text-primary)' }}
+                  onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'}
+                  onMouseOut={e => e.currentTarget.style.borderColor = '#222'}
                 >
-                  {cobranzaEstado === 'cargando' ? <Loader2 size={15} className="animate-spin" /> : cobranzaEstado === 'enviado' ? <CheckCircle size={15} /> : <Mail size={15} aria-hidden="true" />}
-                  {cobranzaEstado === 'enviado' ? 'Enviado ✓' : 'Enviar cobranza'}
+                  <Mail size={15} aria-hidden="true" /> Enviar cobranza
                 </button>
               </div>
             </div>
@@ -1245,13 +1527,21 @@ function SocioDetalle({ socio, onVolver }) {
 
           {/* Columna derecha — Chat sticky */}
           <div className="lg:col-span-2">
-            <div style={{ position: 'sticky', top: 24, alignSelf: 'start' }}>
-              <ChatWhatsApp socio={socio} />
+            <div id="chat-whatsapp-seccion" style={{ position: 'sticky', top: 24, alignSelf: 'start' }}>
+              <ChatWhatsApp socio={socio} mensajeInicial={mensajeInicial} chatInputRef={chatInputRef} highlighted={chatHighlight} />
             </div>
           </div>
 
         </div>
       </div>
+
+      {modalCorreo && (
+        <ModalCorreo
+          socio={socio}
+          onClose={() => setModalCorreo(false)}
+          onEnviado={() => setModalCorreo(false)}
+        />
+      )}
     </div>
   )
 }
@@ -1260,6 +1550,7 @@ function SocioDetalle({ socio, onVolver }) {
    PÁGINA PRINCIPAL — SOCIOS
 ══════════════════════════════════════════════ */
 export default function Socios() {
+  const location = useLocation()
   const [socios, setSocios] = useState([])
   const [total, setTotal] = useState(0)
   const [pagina, setPagina] = useState(1)
@@ -1273,6 +1564,7 @@ export default function Socios() {
   const [modalCSV, setModalCSV] = useState(false)
   const [drawerSocio, setDrawerSocio] = useState(null)
   const [socioDetalle, setSocioDetalle] = useState(null)   // pantalla completa
+  const [mensajeInicial, setMensajeInicial] = useState('')
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -1294,22 +1586,37 @@ export default function Socios() {
     return () => clearTimeout(t)
   }, [cargar])
 
+  useEffect(() => {
+    if (!location.state?.abrirSocioId || socios.length === 0) return
+    const socioTarget = socios.find(s => s.id === location.state.abrirSocioId)
+    if (socioTarget) {
+      setSocioDetalle(socioTarget)
+      if (location.state.mensajeInicial) setMensajeInicial(location.state.mensajeInicial)
+      if (location.state.abrirChat) {
+        setTimeout(() => {
+          document.getElementById('chat-whatsapp-seccion')?.scrollIntoView({ behavior: 'smooth' })
+        }, 300)
+      }
+    }
+    window.history.replaceState({}, '')
+  }, [socios, location.state]) // eslint-disable-line react-hooks/exhaustive-deps
+
   /* ── Pantalla completa del socio ── */
   if (socioDetalle) {
     return (
       <>
-        <SocioDetalle socio={socioDetalle} onVolver={() => setSocioDetalle(null)} />
+        <SocioDetalle socio={socioDetalle} onVolver={() => { setSocioDetalle(null); setMensajeInicial('') }} mensajeInicial={mensajeInicial} />
         {/* Drawer sigue disponible si el usuario lo abrió desde el drawer antes de navegar — no aplica acá */}
       </>
     )
   }
 
   return (
-    <div className="p-8 animate-fade-in">
+    <div className="p-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-syne" style={{ color: 'var(--color-text-primary)' }}>Socios</h1>
+          <h1 className="text-xl font-bold font-syne" style={{ color: 'var(--color-text-primary)' }}>Socios</h1>
           <p className="text-sm mt-0.5 font-dm" style={{ color: 'var(--color-text-secondary)' }}>
             <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>{total}</span> socios registrados
           </p>
@@ -1329,10 +1636,22 @@ export default function Socios() {
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" />
-            <input className="input pl-9 text-sm"
+            <input className="input pl-9 pr-8 text-sm"
               placeholder="Buscar por nombre, cédula, email..."
               value={busqueda}
               onChange={e => { setBusqueda(e.target.value); setPagina(1) }} />
+            {busqueda && (
+              <button
+                onClick={() => { setBusqueda(''); setPagina(1) }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: '#555' }}
+                onMouseOver={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
+                onMouseOut={e => e.currentTarget.style.color = '#555'}
+                aria-label="Limpiar búsqueda"
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
+            )}
           </div>
           <select className="input text-sm max-w-[180px]" value={filtroRiesgo}
             onChange={e => { setFiltroRiesgo(e.target.value); setPagina(1) }}>
@@ -1371,8 +1690,31 @@ export default function Socios() {
               <tbody>
                 {socios.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-14 text-center text-sm font-dm" style={{ color: 'var(--color-text-secondary)' }}>
-                      No se encontraron socios con los filtros aplicados
+                    <td colSpan={7} className="px-5 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                          <User size={18} style={{ color: '#444' }} aria-hidden="true" />
+                        </div>
+                        <div>
+                          <p className="font-syne font-semibold text-sm mb-1" style={{ color: '#555' }}>Sin socios</p>
+                          <p className="text-xs font-dm" style={{ color: '#3A3A3A' }}>
+                            {busqueda || filtroRiesgo || filtroMora
+                              ? 'No se encontraron socios con los filtros aplicados'
+                              : 'Aún no hay socios registrados en el sistema'}
+                          </p>
+                        </div>
+                        {(busqueda || filtroRiesgo || filtroMora) && (
+                          <button
+                            onClick={() => { setBusqueda(''); setFiltroRiesgo(''); setFiltroMora(''); setPagina(1) }}
+                            className="text-xs font-dm px-3 py-1.5 transition-colors"
+                            style={{ border: '1px solid #2A2A2A', borderRadius: 6, color: '#666' }}
+                            onMouseOver={e => { e.currentTarget.style.borderColor = '#3A3A3A'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
+                            onMouseOut={e => { e.currentTarget.style.borderColor = '#2A2A2A'; e.currentTarget.style.color = '#666' }}
+                          >
+                            Limpiar filtros
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ) : socios.map(s => {
@@ -1463,7 +1805,7 @@ export default function Socios() {
                 <ChevronLeft size={13} aria-hidden="true" />
               </button>
               <span className="text-xs font-dm px-2" style={{ color: 'var(--color-text-secondary)' }} aria-label={`Página ${pagina} de ${paginas}`}>
-                {pagina} / {paginas}
+                Página {pagina} de {paginas}
               </span>
               <button onClick={() => setPagina(p => Math.min(paginas, p + 1))} disabled={pagina === paginas}
                 className="p-1.5 transition-colors disabled:opacity-30"

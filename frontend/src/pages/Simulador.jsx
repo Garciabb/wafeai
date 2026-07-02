@@ -59,11 +59,11 @@ export default function Simulador() {
   }
 
   return (
-    <div className="p-8 animate-fade-in">
+    <div className="p-6 animate-fade-in">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold font-syne text-[#F0F0EB] flex items-center gap-3">
-          <Calculator size={24} className="text-[#00E5A0]" aria-hidden="true" />
+      <div className="mb-6">
+        <h1 className="text-xl font-bold font-syne flex items-center gap-3" style={{ color: 'var(--color-text-primary)' }}>
+          <Calculator size={20} className="text-[#00E5A0]" aria-hidden="true" />
           ¿Cuánto te cuesta NO tener WafeAI?
         </h1>
         <p className="text-sm mt-1 font-dm" style={{ color: 'var(--color-text-secondary)' }}>

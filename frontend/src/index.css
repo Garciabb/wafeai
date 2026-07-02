@@ -20,6 +20,9 @@
 
   html { scroll-behavior: smooth; }
 
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+
   body {
     background-color: var(--color-bg);
     color: var(--color-text-primary);

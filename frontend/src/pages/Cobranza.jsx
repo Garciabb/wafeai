@@ -182,13 +182,13 @@ export default function Cobranza() {
   }
 
   return (
-    <div className="p-8 animate-fade-in">
+    <div className="p-6 animate-fade-in">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold font-syne text-[#F0F0EB] flex items-center gap-3">
-          <Zap size={24} className="text-[#00E5A0]" /> Cobranza Automatizada
+      <div className="mb-6">
+        <h1 className="text-xl font-bold font-syne flex items-center gap-3" style={{ color: 'var(--color-text-primary)' }}>
+          <Zap size={20} className="text-[#00E5A0]" aria-hidden="true" /> Cobranza Automatizada
         </h1>
-        <p className="text-[#555] font-dm text-sm mt-0.5">Email y WhatsApp para socios en riesgo</p>
+        <p className="font-dm text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Email y WhatsApp para socios en riesgo</p>
       </div>
 
       {/* Tabs */}

@@ -33,13 +33,14 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
             key={to}
             to={to}
             end={to === '/'}
-            aria-current={undefined} /* react-router lo gestiona via isActive */
+            title={label}
+            aria-current={undefined}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 text-sm font-dm font-medium
-               transition-colors duration-150 rounded
+               transition-colors duration-150 rounded border-l-2
                ${isActive
-                 ? 'bg-[#00E5A0]/10 text-[#00E5A0]'
-                 : 'text-[#888] hover:text-[#F0F0EB] hover:bg-[#161616]'
+                 ? 'bg-[#00E5A0]/10 text-[#00E5A0] border-l-[#00E5A0]'
+                 : 'text-[#888] hover:text-[#F0F0EB] hover:bg-[#161616] border-l-transparent'
                }`
             }
           >
@@ -50,7 +51,7 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
                 {label === 'Alertas' && alertasCount > 0 && (
                   <span
                     className="text-white text-xs px-1.5 py-0.5 min-w-[20px] text-center font-dm font-semibold"
-                    style={{ background: 'var(--color-danger)', borderRadius: 4 }}
+                    style={{ background: 'var(--color-danger)', borderRadius: 10 }}
                     aria-label={`${alertasCount} alertas no leídas`}
                   >
                     {alertasCount > 99 ? '99+' : alertasCount}
@@ -62,8 +63,11 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
         ))}
       </nav>
 
+      {/* Separador sutil */}
+      <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', margin: 0 }} />
+
       {/* Usuario — clic para ir a /perfil */}
-      <div className="p-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+      <div className="p-3">
         <div
           className="flex items-center gap-3 px-3 py-2.5"
           style={{ background: 'var(--color-surface-2)', borderRadius: 6 }}
@@ -105,6 +109,7 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
             <LogOut size={15} aria-hidden="true" />
           </button>
         </div>
+        <p className="text-center font-dm mt-2" style={{ color: '#333', fontSize: 10 }}>v1.0 MVP</p>
       </div>
     </aside>
   )

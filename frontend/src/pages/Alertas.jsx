@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Bell, CheckCheck, Filter, AlertTriangle, Info, Zap, Phone, MessageSquare, X, Copy } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Bell, CheckCheck, Filter, AlertTriangle, Info, Zap, Phone, MessageSquare } from 'lucide-react'
 import { SkeletonBlock } from '../components/Skeleton'
 import { useToast } from '../context/ToastContext'
-import { useFocusTrap } from '../hooks/useFocusTrap'
 import api from '../api/client'
 
 const PRIORIDAD_CONFIG = {
@@ -29,15 +29,11 @@ const buildMensaje = (alerta) => {
 
 export default function Alertas() {
   const toast = useToast()
+  const navigate = useNavigate()
   const [alertas, setAlertas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [filtro, setFiltro] = useState('')
   const [soloNoLeidas, setSoloNoLeidas] = useState(false)
-
-  const [waModal, setWaModal]     = useState(null)
-  const [waMensaje, setWaMensaje] = useState('')
-
-  const modalRef = useFocusTrap(!!waModal)
 
   const cargar = async () => {
     setCargando(true)
@@ -53,13 +49,6 @@ export default function Alertas() {
   }
 
   useEffect(() => { cargar() }, [soloNoLeidas, filtro]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!waModal) return
-    const onEsc = (e) => { if (e.key === 'Escape') setWaModal(null) }
-    document.addEventListener('keydown', onEsc)
-    return () => document.removeEventListener('keydown', onEsc)
-  }, [waModal])
 
   const marcarLeida = async (id) => {
     try {
@@ -83,27 +72,14 @@ export default function Alertas() {
     }
   }
 
-  const abrirModalWa = (alerta) => {
-    setWaMensaje(buildMensaje(alerta))
-    setWaModal(alerta)
-  }
-
-  const copiarMensaje = async () => {
-    try {
-      await navigator.clipboard.writeText(waMensaje)
-      toast.success('¡Copiado!')
-    } catch {
-      toast.error('No se pudo copiar al portapapeles')
-    }
-  }
-
-  const abrirWhatsApp = () => {
-    const num = waModal.telefono ? `57${waModal.telefono.replace(/\D/g, '')}` : null
-    if (num) {
-      window.open(`https://wa.me/${num}?text=${encodeURIComponent(waMensaje)}`, '_blank')
-    } else {
-      toast.error(`Agrega el número de ${waModal.socio} en su perfil`)
-    }
+  const irAPerfilWhatsApp = (alerta) => {
+    navigate('/socios', {
+      state: {
+        abrirSocioId: alerta.socio_id,
+        abrirChat: true,
+        mensajeInicial: buildMensaje(alerta),
+      }
+    })
   }
 
   const marcarTodasLeidas = async () => {
@@ -130,7 +106,7 @@ export default function Alertas() {
     return (
       <li
         key={a.id}
-        className={`card flex items-start gap-4 transition-opacity ${!a.leida ? '' : 'opacity-50'}`}
+        className={`card flex items-start gap-4 transition-opacity ${!a.leida ? '' : 'opacity-40'}`}
         aria-label={`Alerta ${a.prioridad}: ${a.mensaje}`}
       >
         <div className={`p-2 flex-shrink-0 ${cls}`} style={{ borderRadius: 6, border: '1px solid' }} aria-hidden="true">
@@ -175,7 +151,7 @@ export default function Alertas() {
               <Phone size={11} aria-hidden="true" /> Llamar
             </button>
             <button
-              onClick={() => abrirModalWa(a)}
+              onClick={() => irAPerfilWhatsApp(a)}
               className="flex items-center gap-1 text-xs px-2 py-1 font-dm transition-colors"
               style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)', background: 'transparent' }}
               onMouseOver={e => { e.currentTarget.style.color = '#25D366'; e.currentTarget.style.borderColor = '#25D366' }}
@@ -213,11 +189,11 @@ export default function Alertas() {
   }
 
   return (
-    <div className="p-8 animate-fade-in">
+    <div className="p-6 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-syne flex items-center gap-3"
+          <h1 className="text-xl font-bold font-syne flex items-center gap-3"
             style={{ color: 'var(--color-text-primary)' }}>
             <Bell size={22} style={{ color: 'var(--color-accent)' }} aria-hidden="true" />
             Alertas
@@ -249,7 +225,7 @@ export default function Alertas() {
       {!cargando && urgentes.length > 0 && !filtro && (
         <div
           className="flex items-center gap-3 px-4 py-3 mb-6 text-sm font-dm font-medium"
-          style={{ background: 'rgba(255,68,85,0.08)', border: '1px solid rgba(255,68,85,0.25)', borderRadius: 8, color: '#FF6B7A' }}
+          style={{ background: 'rgba(255,68,85,0.06)', border: '1px solid rgba(255,68,85,0.2)', borderRadius: 8, color: '#FF6B7A' }}
           role="alert"
         >
           <AlertTriangle size={16} aria-hidden="true" />
@@ -316,8 +292,9 @@ export default function Alertas() {
         ) : alertas.length === 0 ? (
           <div className="card text-center py-16" aria-label="Sin alertas">
             <Bell size={36} aria-hidden="true" style={{ margin: '0 auto 12px', color: '#222' }} />
-            <p className="text-sm font-dm" style={{ color: 'var(--color-text-secondary)' }}>
-              No hay alertas {soloNoLeidas ? 'no leídas' : filtro ? `de prioridad ${filtro}` : ''}
+            <p className="font-syne font-semibold text-sm mb-1" style={{ color: '#555' }}>Sin alertas</p>
+            <p className="text-sm font-dm" style={{ color: '#444' }}>
+              No hay alertas {soloNoLeidas ? 'no leídas' : filtro ? `de prioridad ${filtro}` : 'en este momento'}
             </p>
           </div>
         ) : filtro ? (
@@ -355,89 +332,6 @@ export default function Alertas() {
         )}
       </div>
 
-      {/* ── Modal WhatsApp ── */}
-      {waModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.75)' }}
-          onClick={e => { if (e.target === e.currentTarget) setWaModal(null) }}
-          aria-hidden="false"
-        >
-          <div
-            ref={modalRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="wa-modal-title"
-            className="card w-full max-w-md mx-4"
-            style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6)', border: '1px solid #1A1A1A' }}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 id="wa-modal-title" className="font-syne font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                  Mensaje WhatsApp
-                </h2>
-                <p className="text-xs font-dm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                  {waModal.socio} · {TIPO_LABEL[waModal.tipo] || waModal.tipo}
-                </p>
-              </div>
-              <button
-                onClick={() => setWaModal(null)}
-                className="p-1 transition-colors"
-                style={{ color: '#555' }}
-                aria-label="Cerrar modal"
-                onMouseOver={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
-                onMouseOut={e => e.currentTarget.style.color = '#555'}
-              >
-                <X size={18} aria-hidden="true" />
-              </button>
-            </div>
-
-            <div
-              className="mb-4 px-3 py-2.5 rounded text-xs font-dm leading-relaxed"
-              style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
-            >
-              {waModal.mensaje}
-            </div>
-
-            <label htmlFor="wa-textarea" className="block text-xs font-dm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-              Mensaje a enviar
-            </label>
-            <textarea
-              id="wa-textarea"
-              value={waMensaje}
-              onChange={e => setWaMensaje(e.target.value)}
-              maxLength={1000}
-              rows={6}
-              className="input w-full text-sm font-dm resize-none"
-              style={{ color: 'var(--color-text-primary)', lineHeight: '1.5' }}
-            />
-            <div className="flex justify-end mt-1 mb-5">
-              <span
-                className="text-xs font-dm"
-                style={{ color: waMensaje.length > 900 ? 'var(--color-warning)' : '#444' }}
-                aria-live="polite"
-              >
-                {waMensaje.length}/1000
-              </span>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={copiarMensaje}
-                className="btn-ghost flex-1 flex items-center justify-center gap-2 text-sm py-2.5"
-              >
-                <Copy size={14} aria-hidden="true" /> Copiar mensaje
-              </button>
-              <button
-                onClick={abrirWhatsApp}
-                className="btn-primary flex-1 flex items-center justify-center gap-2 text-sm py-2.5"
-              >
-                <MessageSquare size={14} aria-hidden="true" /> Abrir WhatsApp →
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

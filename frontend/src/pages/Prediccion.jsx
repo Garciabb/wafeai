@@ -68,13 +68,13 @@ export default function Prediccion() {
     : '#00E5A0'
 
   return (
-    <div className="p-8 animate-fade-in">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-6 animate-fade-in">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-syne text-[#F0F0EB] flex items-center gap-3">
-            <Brain size={24} className="text-[#00E5A0]" /> Predicción IA
+          <h1 className="text-xl font-bold font-syne flex items-center gap-3" style={{ color: 'var(--color-text-primary)' }}>
+            <Brain size={20} className="text-[#00E5A0]" aria-hidden="true" /> Predicción IA
           </h1>
-          <p className="text-[#555] font-dm text-sm mt-0.5">Modelo Gradient Boosting — Riesgo de incumplimiento crediticio</p>
+          <p className="font-dm text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Modelo Gradient Boosting — Riesgo de incumplimiento crediticio</p>
         </div>
         <button
           onClick={recalcularTodos}
@@ -110,8 +110,9 @@ export default function Prediccion() {
           <h2 className="font-syne font-semibold text-[#F0F0EB] mb-1">Calcular score manual</h2>
           <p className="text-[#555] text-xs font-dm mb-5">Ingresa los datos del socio para predecir su riesgo</p>
 
-          <div className="mb-4 px-3 py-2 rounded-lg bg-[#00E5A0]/8 border border-[#00E5A0]/20 text-xs font-dm text-[#00E5A0]">
-            <span className="font-semibold">Demo predictivo:</span> este socio tiene <strong>0 días de mora</strong> — está al día. El modelo detecta señales conductuales de riesgo futuro.
+          <div className="mb-4 px-4 py-3 rounded-r-md text-xs font-dm" style={{ borderLeft: '3px solid #00E5A0', background: 'rgba(0,229,160,0.04)', color: '#888' }}>
+            <span className="font-semibold" style={{ color: '#00E5A0' }}>Demo predictivo:</span>{' '}
+            este socio tiene <strong style={{ color: 'var(--color-text-primary)' }}>0 días de mora</strong> — está al día. El modelo detecta señales conductuales de riesgo futuro.
           </div>
 
           <form onSubmit={calcular} className="space-y-4">

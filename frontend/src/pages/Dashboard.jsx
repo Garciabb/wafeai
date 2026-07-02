@@ -82,11 +82,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-8 animate-fade-in">
+    <div className="p-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-syne" style={{ color: 'var(--color-text-primary)' }}>
+          <h1 className="text-xl font-bold font-syne" style={{ color: 'var(--color-text-primary)' }}>
             Dashboard
           </h1>
           <p className="text-sm mt-1 font-dm" style={{ color: 'var(--color-text-secondary)' }}>
@@ -299,7 +299,7 @@ export default function Dashboard() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                     {['Socio', 'Score IA', 'Saldo', 'Acción'].map(h => (
-                      <th key={h} scope="col" className="px-5 py-3 text-left text-xs font-medium font-dm"
+                      <th key={h} scope="col" className={`px-5 py-3 text-xs font-medium font-dm ${h === 'Saldo' ? 'text-right' : 'text-left'}`}
                         style={{ color: 'var(--color-text-secondary)' }}>
                         {h}
                       </th>
@@ -327,7 +327,7 @@ export default function Dashboard() {
                           <p className="text-xs font-dm" style={{ color: 'var(--color-text-secondary)' }}>{s.cedula}</p>
                         </td>
                         <td className="px-5 py-3"><RiskBadge nivel={s.nivel_riesgo} score={s.score_riesgo} showScore /></td>
-                        <td className="px-5 py-3 text-sm font-syne font-semibold" style={{ color: 'var(--color-accent)' }}>
+                        <td className="px-5 py-3 text-sm font-syne font-semibold text-right" style={{ color: 'var(--color-accent)' }}>
                           {fmt(s.saldo_pendiente)}
                         </td>
                         <td className="px-5 py-3">

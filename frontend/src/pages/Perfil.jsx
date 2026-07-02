@@ -110,7 +110,7 @@ export default function Perfil() {
 
   if (cargandoPerfil) {
     return (
-      <div className="p-8 animate-fade-in">
+      <div className="p-6 animate-fade-in">
         <div className="max-w-2xl mx-auto space-y-4">
           {[1, 2, 3].map(i => (
             <div key={i} className="card">

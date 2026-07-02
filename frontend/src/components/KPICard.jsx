@@ -6,7 +6,8 @@ export default function KPICard({ titulo, valor, subtitulo, icono: Icono, acento
       style={acento ? {
         borderColor: 'rgba(0,229,160,0.3)',
         background: 'rgba(0,229,160,0.04)',
-      } : {}}
+        minHeight: 120,
+      } : { minHeight: 120 }}
       aria-label={`${titulo}: ${valor}`}
     >
       <div className="flex items-start justify-between mb-3">
