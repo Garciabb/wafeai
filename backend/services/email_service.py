@@ -70,9 +70,11 @@ async def enviar_email(
     destinatario_nombre: str,
     plantilla: str = "recordatorio_pago",
     variables: dict = {},
+    asunto_custom: str = None,
+    cuerpo_html_custom: str = None,
+    cc: list = [],
 ) -> dict:
     if not settings.RESEND_API_KEY or not settings.RESEND_API_KEY.strip():
-        # Modo demo: simula envío exitoso sin API key real
         return {
             "enviado": True,
             "demo": True,
@@ -80,19 +82,30 @@ async def enviar_email(
             "detalle": "Modo demo — agrega RESEND_API_KEY en .env para envíos reales.",
         }
 
-    tpl = PLANTILLAS.get(plantilla, PLANTILLAS["recordatorio_pago"])
+    if asunto_custom or cuerpo_html_custom:
+        asunto = asunto_custom or ""
+        html = cuerpo_html_custom or ""
+    else:
+        tpl = PLANTILLAS.get(plantilla, PLANTILLAS["recordatorio_pago"])
+        vars_completas = {
+            "nombre": destinatario_nombre,
+            "cooperativa": "Cooperativa Financiera",
+            "monto": "N/A",
+            "fecha_vencimiento": "N/A",
+            "dias_mora": "0",
+            **variables,
+        }
+        asunto = tpl["asunto"].format(**vars_completas)
+        html = tpl["html"].format(**vars_completas)
 
-    vars_completas = {
-        "nombre": destinatario_nombre,
-        "cooperativa": "Cooperativa Financiera",
-        "monto": "N/A",
-        "fecha_vencimiento": "N/A",
-        "dias_mora": "0",
-        **variables,
+    payload = {
+        "from": settings.RESEND_FROM_EMAIL,
+        "to": [destinatario_email],
+        "subject": asunto,
+        "html": html,
     }
-
-    asunto = tpl["asunto"].format(**vars_completas)
-    html = tpl["html"].format(**vars_completas)
+    if cc:
+        payload["cc"] = cc
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -102,12 +115,7 @@ async def enviar_email(
                     "Authorization": f"Bearer {settings.RESEND_API_KEY}",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "from": settings.RESEND_FROM_EMAIL,
-                    "to": [destinatario_email],
-                    "subject": asunto,
-                    "html": html,
-                },
+                json=payload,
             )
         if resp.status_code in (200, 201):
             return {"enviado": True, "id": resp.json().get("id"), "demo": False}

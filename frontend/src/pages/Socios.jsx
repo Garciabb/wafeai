@@ -70,10 +70,14 @@ function ModalNuevoSocio({ onClose, onCreado }) {
       const partes = form.nombre.trim().split(' ')
       const nombre = partes[0] || ''
       const apellido = partes.slice(1).join(' ') || 'N/A'
-      const { data: socioData } = await api.post('/socios/', {
+      const postData = {
         cedula: form.cedula, nombre, apellido,
         email: form.email, telefono: form.telefono || '0000000000', ciudad: form.ciudad,
-      })
+        tipo_credito: form.tipo_credito,
+        dias_mora: parseInt(form.dias_mora) || 0,
+      }
+      if (form.monto) postData.monto = parseFloat(form.monto)
+      const { data: socioData } = await api.post('/socios/', postData)
       await api.post(`/prediccion/socio/${socioData.id}`)
       onCreado()
       onClose()
@@ -310,6 +314,7 @@ function DrawerScoreIA({ socio, onClose }) {
   }, [socio.id])
 
   const iniciarCobranza = async () => {
+    if (!window.confirm('¿Enviar email de cobranza a ' + socio.nombre_completo + '?')) return
     setCobranzaEstado('cargando')
     try {
       await api.post('/cobranza/enviar-email', { socio_id: socio.id, plantilla: socio.dias_mora > 30 ? 'mora_urgente' : 'recordatorio_pago' })
@@ -417,6 +422,21 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
   const [mensaje, setMensaje] = useState(mensajeInicial)
   const [historial, setHistorial] = useState([])
   const [sugerenciaSeleccionada, setSugerenciaSeleccionada] = useState(-1)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`wafeai_chat_${socio.id}`)
+      if (saved) setHistorial(JSON.parse(saved))
+    } catch {}
+  }, [socio.id])
+
+  useEffect(() => {
+    try {
+      if (historial.length > 0)
+        localStorage.setItem(`wafeai_chat_${socio.id}`, JSON.stringify(historial.slice(-50)))
+    } catch {}
+  }, [historial, socio.id])
+
   const [mensajesPersonalizados, setMensajesPersonalizados] = useState([])
   const [formAbierto, setFormAbierto] = useState(false)
   const [formNombre, setFormNombre] = useState('')
@@ -1042,6 +1062,16 @@ function ModalCorreo({ socio, onClose, onEnviado }) {
   const [error, setError] = useState(null)
   const dialogRef = useFocusTrap(true)
 
+  const aplicarFormato = (abre, cierra) => {
+    const ta = document.getElementById('modal-correo-body')
+    if (!ta) return
+    const start = ta.selectionStart, end = ta.selectionEnd
+    const sel = cuerpo.substring(start, end)
+    const nuevo = cuerpo.substring(0, start) + abre + sel + cierra + cuerpo.substring(end)
+    setCuerpo(nuevo)
+    setTimeout(() => { ta.focus(); ta.setSelectionRange(start + abre.length, end + abre.length) }, 0)
+  }
+
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handler)
@@ -1061,8 +1091,9 @@ function ModalCorreo({ socio, onClose, onEnviado }) {
       await api.post('/cobranza/enviar-email', {
         socio_id: socio.id,
         plantilla: diasMora > 30 ? 'mora_urgente' : 'recordatorio_pago',
-        asunto,
-        cuerpo,
+        asunto_custom: asunto,
+        cuerpo_html_custom: cuerpo,
+        cc: cc ? [cc] : [],
       })
       toast.success(`Correo enviado a ${socio.email || socio.nombre_completo} ✓`)
       onEnviado()
@@ -1178,10 +1209,15 @@ function ModalCorreo({ socio, onClose, onEnviado }) {
 
           {/* Toolbar de formato */}
           <div className="flex items-center gap-1 px-6 py-2" style={{ borderBottom: '1px solid #1A1A1A' }}>
-            {[{ Icon: Bold, label: 'Negrita' }, { Icon: Italic, label: 'Cursiva' }, { Icon: Underline, label: 'Subrayar' }].map(({ Icon, label }) => (
+            {[
+              { Icon: Bold,      label: 'Negrita',  abre: '**',   cierra: '**'   },
+              { Icon: Italic,    label: 'Cursiva',  abre: '_',    cierra: '_'    },
+              { Icon: Underline, label: 'Subrayar', abre: '<u>',  cierra: '</u>' },
+            ].map(({ Icon, label, abre, cierra }) => (
               <button
                 key={label}
                 aria-label={label}
+                onClick={() => aplicarFormato(abre, cierra)}
                 className="flex items-center justify-center transition-colors"
                 style={{ width: 28, height: 28, background: '#111', border: '1px solid #1A1A1A', borderRadius: 4, color: '#666' }}
                 onMouseOver={e => e.currentTarget.style.color = '#999'}
@@ -1205,6 +1241,7 @@ function ModalCorreo({ socio, onClose, onEnviado }) {
           {/* Editor del cuerpo */}
           <div className="px-6 py-4">
             <textarea
+              id="modal-correo-body"
               value={cuerpo}
               onChange={e => setCuerpo(e.target.value.slice(0, 2000))}
               rows={10}
@@ -1480,8 +1517,10 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
           <button
             onClick={() => {
               const tel = socio.telefono?.replace(/\D/g, '')
-              if (tel && tel !== '0000000000') window.open(`https://wa.me/57${tel}`, '_blank')
-              else toast.error('Sin teléfono registrado')
+              if (tel && tel !== '0000000000') {
+                const waNum = tel.startsWith('57') ? tel : `57${tel}`
+                window.open(`https://wa.me/${waNum}`, '_blank')
+              } else toast.error('Sin teléfono registrado')
             }}
             className="flex items-center gap-1.5 text-xs font-dm py-1.5 px-3 transition-all"
             style={{ background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.15)', color: '#25D366', borderRadius: 6 }}
@@ -1620,19 +1659,23 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
             {/* Card 2 — Detalle del Crédito */}
             <div style={cs}>
               {secTitle('Detalle del Crédito')}
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: 'Tipo de crédito', val: socio.tipo_credito || '—', valColor: 'var(--color-text-primary)' },
-                  { label: 'Saldo pendiente', val: fmt(socio.saldo_pendiente), valColor: '#00E5A0' },
-                  { label: 'Días en mora', val: `${socio.dias_mora} días`, valColor: diasColor },
-                  { label: 'Estado de mora', val: moraBadge.label, valColor: moraBadge.color },
-                ].map(m => (
-                  <div key={m.label} style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: 8, padding: '12px 14px' }}>
-                    <p className="font-dm" style={{ color: '#555', fontSize: 11 }}>{m.label}</p>
-                    <p className="font-syne font-bold mt-1.5" style={{ color: m.valColor, fontSize: 16 }}>{m.val}</p>
-                  </div>
-                ))}
-              </div>
+              {!socio.tipo_credito ? (
+                <p className="font-dm text-sm" style={{ color: '#555' }}>Este socio no tiene un crédito activo registrado</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: 'Tipo de crédito', val: socio.tipo_credito || '—', valColor: 'var(--color-text-primary)' },
+                    { label: 'Saldo pendiente', val: fmt(socio.saldo_pendiente), valColor: '#00E5A0' },
+                    { label: 'Días en mora', val: `${socio.dias_mora} días`, valColor: diasColor },
+                    { label: 'Estado de mora', val: moraBadge.label, valColor: moraBadge.color },
+                  ].map(m => (
+                    <div key={m.label} style={{ background: '#111', border: '1px solid #1A1A1A', borderRadius: 8, padding: '12px 14px' }}>
+                      <p className="font-dm" style={{ color: '#555', fontSize: 11 }}>{m.label}</p>
+                      <p className="font-syne font-bold mt-1.5" style={{ color: m.valColor, fontSize: 16 }}>{m.val}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Card 3 — Gestión */}
@@ -1724,6 +1767,7 @@ export default function Socios() {
   const [filtroRiesgo, setFiltroRiesgo] = useState('')
   const [filtroMora, setFiltroMora] = useState('')
   const [cargando, setCargando] = useState(true)
+  const [errorCarga, setErrorCarga] = useState(null)
 
   const [modalNuevo, setModalNuevo] = useState(false)
   const [modalCSV, setModalCSV] = useState(false)
@@ -1733,6 +1777,7 @@ export default function Socios() {
 
   const cargar = useCallback(async () => {
     setCargando(true)
+    setErrorCarga(null)
     try {
       const params = new URLSearchParams({ pagina, por_pagina: 15 })
       if (busqueda) params.set('busqueda', busqueda)
@@ -1742,7 +1787,9 @@ export default function Socios() {
       setSocios(data.socios)
       setTotal(data.total)
       setPaginas(data.paginas)
-    } catch { /* silencioso */ }
+    } catch {
+      setErrorCarga('Error al cargar los socios')
+    }
     finally { setCargando(false) }
   }, [busqueda, filtroRiesgo, filtroMora, pagina])
 
@@ -1752,19 +1799,22 @@ export default function Socios() {
   }, [cargar])
 
   useEffect(() => {
-    if (!location.state?.abrirSocioId || socios.length === 0) return
-    const socioTarget = socios.find(s => s.id === location.state.abrirSocioId)
-    if (socioTarget) {
-      setSocioDetalle(socioTarget)
-      if (location.state.mensajeInicial) setMensajeInicial(location.state.mensajeInicial)
-      if (location.state.abrirChat) {
-        setTimeout(() => {
-          document.getElementById('chat-whatsapp-seccion')?.scrollIntoView({ behavior: 'smooth' })
-        }, 300)
-      }
+    if (!location.state?.abrirSocioId) return
+    const fetchSocio = async () => {
+      try {
+        const { data } = await api.get('/socios/' + location.state.abrirSocioId)
+        setSocioDetalle(data)
+        if (location.state.mensajeInicial) setMensajeInicial(location.state.mensajeInicial)
+        if (location.state.abrirChat) {
+          setTimeout(() => {
+            document.getElementById('chat-whatsapp-seccion')?.scrollIntoView({ behavior: 'smooth' })
+          }, 300)
+        }
+      } catch {}
+      window.history.replaceState({}, '')
     }
-    window.history.replaceState({}, '')
-  }, [socios, location.state]) // eslint-disable-line react-hooks/exhaustive-deps
+    fetchSocio()
+  }, [location.state]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── Pantalla completa del socio ── */
   if (socioDetalle) {
@@ -1841,6 +1891,13 @@ export default function Socios() {
         </div>
       </div>
 
+      {/* Error banner */}
+      {errorCarga && !cargando && (
+        <div className="card mb-4 flex items-center gap-3 px-4 py-3 text-sm font-dm" style={{ border: '1px solid rgba(255,68,85,0.2)', color: '#FF6B7A', background: 'rgba(255,68,85,0.06)' }}>
+          <AlertTriangle size={14} /> Error al cargar los socios. <button onClick={cargar} className="underline">Reintentar</button>
+        </div>
+      )}
+
       {/* Tabla */}
       <div className="card p-0 overflow-hidden">
         <div className="overflow-x-auto">
@@ -1882,6 +1939,11 @@ export default function Socios() {
                             onMouseOut={e => { e.currentTarget.style.borderColor = '#2A2A2A'; e.currentTarget.style.color = '#666' }}
                           >
                             Limpiar filtros
+                          </button>
+                        )}
+                        {!busqueda && !filtroRiesgo && !filtroMora && (
+                          <button onClick={() => setModalNuevo(true)} className="btn-primary text-xs px-4 py-2 flex items-center gap-2 mx-auto">
+                            <Plus size={13} /> Crear primer socio
                           </button>
                         )}
                       </div>

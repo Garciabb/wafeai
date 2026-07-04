@@ -68,7 +68,7 @@ export default function Alertas() {
     if (alerta.telefono) {
       window.open(`tel:${alerta.telefono}`, '_self')
     } else {
-      toast.error(`Agrega el número de ${alerta.socio} en su perfil`)
+      toast.error('Sin teléfono registrado para este socio')
     }
   }
 
@@ -297,14 +297,12 @@ export default function Alertas() {
               No hay alertas {soloNoLeidas ? 'no leídas' : filtro ? `de prioridad ${filtro}` : 'en este momento'}
             </p>
           </div>
-        ) : filtro ? (
-          <ul className="space-y-2" role="list">
-            {alertas.map(renderAlerta)}
-          </ul>
         ) : (
           <div className="space-y-6">
             {(['urgente', 'media', 'baja']).map(p => {
-              const grupo = gruposPrioridad[p] || []
+              const grupo = filtro
+                ? (filtro === p ? alertas : [])
+                : (gruposPrioridad[p] || [])
               if (grupo.length === 0) return null
               const { label } = PRIORIDAD_CONFIG[p]
               const colorHeader = p === 'urgente' ? '#FF6B7A' : p === 'media' ? '#FFB800' : '#00E5A0'

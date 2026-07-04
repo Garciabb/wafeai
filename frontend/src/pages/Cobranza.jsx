@@ -371,6 +371,11 @@ export default function Cobranza() {
                   <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#555]" />
                 )}
               </div>
+              {mostrarResultados && resultadosBusqueda.length === 0 && !buscandoSocio && busquedaSocio.length >= 2 && (
+                <p className="text-xs font-dm mt-2" style={{ color: '#555' }}>
+                  No se encontraron socios con ese criterio.
+                </p>
+              )}
               {mostrarResultados && resultadosBusqueda.length > 0 && (
                 <div
                   className="absolute z-20 w-full mt-1 rounded-lg overflow-hidden"

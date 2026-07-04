@@ -18,6 +18,9 @@ class EnvioEmailRequest(BaseModel):
     socio_id: int
     plantilla: str = "recordatorio_pago"
     variables_extra: Optional[dict] = {}
+    asunto_custom: Optional[str] = None
+    cuerpo_html_custom: Optional[str] = None
+    cc: Optional[list] = []
 
 
 class EnvioWhatsAppRequest(BaseModel):
@@ -48,7 +51,7 @@ async def enviar_email_socio(
         "monto": f"${credito.saldo_pendiente:,.0f} COP" if credito else "N/A",
         "fecha_vencimiento": credito.fecha_vencimiento.strftime("%d/%m/%Y") if credito else "N/A",
         "dias_mora": str(socio.dias_mora_maximo),
-        **data.variables_extra,
+        **(data.variables_extra or {}),
     }
 
     resultado = await enviar_email(
@@ -56,6 +59,9 @@ async def enviar_email_socio(
         destinatario_nombre=socio.nombre,
         plantilla=data.plantilla,
         variables=variables,
+        asunto_custom=data.asunto_custom,
+        cuerpo_html_custom=data.cuerpo_html_custom,
+        cc=data.cc or [],
     )
 
     estado = EstadoComunicacion.enviado if resultado.get("enviado") else EstadoComunicacion.fallido
@@ -63,8 +69,8 @@ async def enviar_email_socio(
         socio_id=socio.id,
         usuario_id=usuario.id,
         tipo=TipoComunicacion.email,
-        asunto=f"Cobranza - {socio.nombre} {socio.apellido}",
-        mensaje=f"Plantilla: {data.plantilla}",
+        asunto=data.asunto_custom or f"Cobranza - {socio.nombre} {socio.apellido}",
+        mensaje=(data.cuerpo_html_custom or f"Plantilla: {data.plantilla}")[:500],
         estado=estado,
         plantilla=data.plantilla,
     )
@@ -83,6 +89,9 @@ async def enviar_whatsapp_socio(
     socio = db.query(Socio).filter(Socio.id == data.socio_id, Socio.activo == True).first()
     if not socio:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
+
+    if not socio.telefono or socio.telefono.strip() in ('', '0000000000'):
+        raise HTTPException(status_code=400, detail="El socio no tiene un número de teléfono válido registrado")
 
     credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).first()
     monto_str = f"${credito.saldo_pendiente:,.0f} COP" if credito else "$0 COP"
@@ -129,7 +138,7 @@ async def lanzar_campana(
             "socios": [{"id": s.id, "nombre": f"{s.nombre} {s.apellido}", "email": s.email, "telefono": s.telefono} for s in socios[:10]],
         }
 
-    enviados, fallidos = 0, 0
+    enviados, fallidos, sin_telefono = 0, 0, 0
 
     for socio in socios:
         credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).first()
@@ -156,18 +165,21 @@ async def lanzar_campana(
                 fallidos += 1
 
         if data.tipo_mensaje in ("whatsapp", "ambos"):
-            monto_str = f"${credito.saldo_pendiente:,.0f} COP" if credito else "$0"
-            msg = generar_mensaje_cobranza(socio.nombre, monto_str, socio.dias_mora_maximo)
-            resultado_wa = await enviar_whatsapp_texto(socio.telefono, msg)
-            estado_w = EstadoComunicacion.enviado if resultado_wa.get("enviado") else EstadoComunicacion.fallido
-            db.add(Comunicacion(
-                socio_id=socio.id, usuario_id=usuario.id,
-                tipo=TipoComunicacion.whatsapp, mensaje=msg, estado=estado_w,
-            ))
-            if resultado_wa.get("enviado"):
-                enviados += 1
+            if not socio.telefono or socio.telefono.strip() in ('', '0000000000'):
+                sin_telefono += 1
             else:
-                fallidos += 1
+                monto_str = f"${credito.saldo_pendiente:,.0f} COP" if credito else "$0"
+                msg = generar_mensaje_cobranza(socio.nombre, monto_str, socio.dias_mora_maximo)
+                resultado_wa = await enviar_whatsapp_texto(socio.telefono, msg)
+                estado_w = EstadoComunicacion.enviado if resultado_wa.get("enviado") else EstadoComunicacion.fallido
+                db.add(Comunicacion(
+                    socio_id=socio.id, usuario_id=usuario.id,
+                    tipo=TipoComunicacion.whatsapp, mensaje=msg, estado=estado_w,
+                ))
+                if resultado_wa.get("enviado"):
+                    enviados += 1
+                else:
+                    fallidos += 1
 
     db.commit()
     # Detectar si fue modo demo (todos los envíos tienen demo=True)
@@ -176,6 +188,7 @@ async def lanzar_campana(
         "total_socios": len(socios),
         "enviados": enviados,
         "fallidos": fallidos,
+        "sin_telefono": sin_telefono,
         "demo": es_demo,
     }
 

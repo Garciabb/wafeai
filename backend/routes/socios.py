@@ -5,10 +5,10 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from typing import Optional
-from datetime import date
+from datetime import date, timedelta
 from database import get_db
 from models.socio import Socio, NivelRiesgo, EstadoMora
-from models.credito import Credito, EstadoCredito
+from models.credito import Credito, EstadoCredito, TipoCredito
 from routes.auth import get_usuario_actual
 from models.user import Usuario
 
@@ -24,6 +24,9 @@ class SocioCreate(BaseModel):
     ciudad: str
     fecha_nacimiento: Optional[date] = None
     fecha_ingreso: Optional[date] = None
+    monto: Optional[float] = None
+    tipo_credito: Optional[str] = None
+    dias_mora: Optional[int] = 0
 
 
 class SocioUpdate(BaseModel):
@@ -106,7 +109,7 @@ def get_socio(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_usuario_actual),
 ):
-    socio = db.query(Socio).filter(Socio.id == socio_id).first()
+    socio = db.query(Socio).filter(Socio.id == socio_id, Socio.activo == True).first()
     if not socio:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
 
@@ -157,10 +160,35 @@ def crear_socio(
     if existente:
         raise HTTPException(status_code=400, detail="Ya existe un socio con esa cédula")
 
-    socio = Socio(**data.model_dump())
+    socio = Socio(**data.model_dump(exclude={'monto', 'tipo_credito', 'dias_mora'}))
     db.add(socio)
     db.commit()
     db.refresh(socio)
+
+    if data.monto is not None:
+        hoy = date.today()
+        vencimiento = hoy + timedelta(days=365)
+        tipo_val = data.tipo_credito or 'consumo'
+        try:
+            tipo_enum = TipoCredito(tipo_val)
+        except ValueError:
+            tipo_enum = TipoCredito.consumo
+        credito = Credito(
+            socio_id=socio.id,
+            tipo=tipo_enum,
+            monto_original=data.monto,
+            saldo_pendiente=data.monto,
+            tasa_interes=0.0,
+            plazo_meses=12,
+            dias_mora=data.dias_mora or 0,
+            fecha_desembolso=hoy,
+            fecha_vencimiento=vencimiento,
+            estado=EstadoCredito.activo,
+            num_cuotas_total=12,
+        )
+        db.add(credito)
+        db.commit()
+
     return {"mensaje": "Socio creado exitosamente", "id": socio.id}
 
 
@@ -175,11 +203,17 @@ def actualizar_socio(
     if not socio:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
 
+    if data.email:
+        duplicado = db.query(Socio).filter(Socio.email == data.email, Socio.id != socio_id).first()
+        if duplicado:
+            raise HTTPException(status_code=400, detail="El email ya está en uso por otro socio")
+
     for field, value in data.model_dump(exclude_none=True).items():
         setattr(socio, field, value)
 
     db.commit()
-    return {"mensaje": "Socio actualizado exitosamente"}
+    db.refresh(socio)
+    return _socio_dict(socio, db)
 
 
 @router.delete("/{socio_id}", summary="Desactivar un socio (soft delete)")
@@ -220,28 +254,34 @@ async def importar_csv(
 
     creados, omitidos, errores = 0, 0, []
 
+    # Pre-fetch all existing cedulas to avoid per-row queries (EC-06)
+    cedulas_existentes = set(row[0] for row in db.query(Socio.cedula).all())
+
     for i, fila in enumerate(lector, 1):
+        cedula = fila.get("cedula", "").strip()
+        if not cedula:
+            errores.append(f"Fila {i}: cédula vacía")
+            continue
+
+        if cedula in cedulas_existentes:
+            omitidos += 1
+            continue
+
+        nuevo_socio = Socio(
+            cedula=cedula,
+            nombre=fila.get("nombre", "").strip(),
+            apellido=fila.get("apellido", "").strip(),
+            email=fila.get("email", "").strip(),
+            telefono=fila.get("telefono", "").strip(),
+            ciudad=fila.get("ciudad", "Bogotá").strip(),
+        )
         try:
-            cedula = fila.get("cedula", "").strip()
-            if not cedula:
-                errores.append(f"Fila {i}: cédula vacía")
-                continue
-
-            if db.query(Socio).filter(Socio.cedula == cedula).first():
-                omitidos += 1
-                continue
-
-            socio = Socio(
-                cedula=cedula,
-                nombre=fila.get("nombre", "").strip(),
-                apellido=fila.get("apellido", "").strip(),
-                email=fila.get("email", "").strip(),
-                telefono=fila.get("telefono", "").strip(),
-                ciudad=fila.get("ciudad", "Bogotá").strip(),
-            )
-            db.add(socio)
+            db.add(nuevo_socio)
+            db.flush()
+            cedulas_existentes.add(cedula)
             creados += 1
         except Exception as e:
+            db.rollback()
             errores.append(f"Fila {i}: {str(e)}")
 
     db.commit()

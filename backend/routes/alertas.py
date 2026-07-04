@@ -7,6 +7,7 @@ from jose import JWTError, jwt
 from database import get_db
 from models.alerta import Alerta, TipoAlerta, PrioridadAlerta
 from models.socio import Socio
+from models.credito import Credito, EstadoCredito
 from routes.auth import get_usuario_actual
 from models.user import Usuario
 from config import get_settings
@@ -64,6 +65,8 @@ async def websocket_alertas(websocket: WebSocket, token: str = Query(...)):
             await websocket.send_text(json.dumps({"tipo": "ping"}))
     except WebSocketDisconnect:
         manager.desconectar(websocket)
+    except Exception:
+        manager.desconectar(websocket)
 
 
 @router.get("/", summary="Listar alertas")
@@ -87,19 +90,22 @@ def listar_alertas(
 
     alertas = query.order_by(Alerta.created_at.desc()).limit(limite).all()
 
-    return [
-        {
+    result = []
+    for a in alertas:
+        cred = a.socio.creditos.filter(Credito.estado == EstadoCredito.activo).first() if a.socio else None
+        result.append({
             "id": a.id,
             "tipo": a.tipo,
             "prioridad": a.prioridad,
             "mensaje": a.mensaje,
             "leida": a.leida,
             "socio_id": a.socio_id,
-            "socio": f"{a.socio.nombre} {a.socio.apellido}",
+            "socio": f"{a.socio.nombre} {a.socio.apellido}" if a.socio else "",
             "fecha": a.created_at.isoformat() if a.created_at else None,
-        }
-        for a in alertas
-    ]
+            "telefono": a.socio.telefono if a.socio else None,
+            "saldo": cred.saldo_pendiente if cred else None,
+        })
+    return result
 
 
 @router.patch("/{alerta_id}/leer", summary="Marcar alerta como leída")
