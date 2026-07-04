@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import {
   Search, Plus, Upload, Download, ChevronLeft, ChevronRight,
   Brain, X, Loader2, CheckCircle, AlertTriangle, MessageSquare,
-  ArrowLeft, Phone, Mail, Send, User, Paperclip, Bold, Italic, Underline,
+  ArrowLeft, Phone, Mail, Send, User, Paperclip, Bold, Italic, Underline, Pencil, Save,
 } from 'lucide-react'
 import RiskBadge from '../components/RiskBadge'
 import { SkeletonTable } from '../components/Skeleton'
@@ -426,6 +426,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
   const [puedeScrollDer, setPuedeScrollDer] = useState(true)
   const [animandoIndex, setAnimandoIndex] = useState(null)
   const [flechaPresionada, setFlechaPresionada] = useState(null)
+  const [enviando, setEnviando] = useState(false)
   const historialRef = useRef(null)
   const textareaRef = useRef(null)
   const carouselRef = useRef(null)
@@ -553,16 +554,26 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
     setTimeout(() => setFlechaPresionada(null), 200)
   }
 
-  const enviar = () => {
-    if (!mensaje.trim() || !tienetelefono) return
+  const enviar = async () => {
+    if (!mensaje.trim() || !tienetelefono || enviando) return
+    const texto = mensaje.trim()
     const hora = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
-    setHistorial(prev => [...prev, { texto: mensaje.trim(), hora }])
-    const tel = socio.telefono.replace(/\D/g, '')
-    const waNum = tel.startsWith('57') ? tel : `57${tel}`
-    window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(mensaje.trim())}`, '_blank')
     setMensaje('')
     setSugerenciaSeleccionada(-1)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
+    setEnviando(true)
+    try {
+      await api.post('/cobranza/enviar-whatsapp', {
+        socio_id: socio.id,
+        mensaje_personalizado: texto,
+      })
+      setHistorial(prev => [...prev, { texto, hora, enviado: true }])
+      toast.success('Mensaje enviado por WhatsApp ✓')
+    } catch {
+      toast.error('Error al enviar el mensaje')
+    } finally {
+      setEnviando(false)
+    }
   }
 
   const handleKeyDown = (e) => {
@@ -919,17 +930,20 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
           />
           <button
             onClick={enviar}
-            disabled={!mensaje.trim() || !tienetelefono}
+            disabled={!mensaje.trim() || !tienetelefono || enviando}
             className="flex-shrink-0 flex items-center justify-center transition-all disabled:opacity-40"
             style={{
               width: 36, height: 36, borderRadius: '50%', border: 'none',
-              background: mensaje.trim() && tienetelefono ? '#25D366' : '#1A1A1A',
-              cursor: mensaje.trim() && tienetelefono ? 'pointer' : 'not-allowed',
+              background: mensaje.trim() && tienetelefono && !enviando ? '#25D366' : '#1A1A1A',
+              cursor: mensaje.trim() && tienetelefono && !enviando ? 'pointer' : 'not-allowed',
               transition: 'background 0.15s ease',
             }}
             aria-label="Enviar por WhatsApp"
           >
-            <Send size={15} style={{ color: '#fff' }} aria-hidden="true" />
+            {enviando
+              ? <Loader2 size={15} style={{ color: '#fff' }} className="animate-spin" aria-hidden="true" />
+              : <Send size={15} style={{ color: '#fff' }} aria-hidden="true" />
+            }
           </button>
         </div>
         <div className="flex justify-end mt-1">
@@ -1238,14 +1252,145 @@ function ModalCorreo({ socio, onClose, onEnviado }) {
 }
 
 /* ══════════════════════════════════════════════
+   MODAL EDITAR SOCIO
+══════════════════════════════════════════════ */
+function ModalEditarSocio({ socio, onClose, onGuardado }) {
+  const toast = useToast()
+  const focusRef = useFocusTrap(true)
+  const [form, setForm] = useState({
+    nombre:   socio.nombre   || '',
+    apellido: socio.apellido || '',
+    email:    socio.email    || '',
+    telefono: socio.telefono || '',
+    ciudad:   socio.ciudad   || '',
+  })
+  const [guardando, setGuardando] = useState(false)
+  const [errores, setErrores] = useState({})
+
+  const set = (k, v) => { setForm(p => ({ ...p, [k]: v })); setErrores(p => ({ ...p, [k]: null })) }
+
+  const validar = () => {
+    const e = {}
+    if (!form.nombre.trim())   e.nombre   = 'Requerido'
+    if (!form.apellido.trim()) e.apellido = 'Requerido'
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Email inválido'
+    return e
+  }
+
+  const guardar = async (e) => {
+    e.preventDefault()
+    const e2 = validar()
+    if (Object.keys(e2).length) { setErrores(e2); return }
+    setGuardando(true)
+    try {
+      const payload = {}
+      if (form.nombre.trim()   !== socio.nombre)   payload.nombre   = form.nombre.trim()
+      if (form.apellido.trim() !== socio.apellido) payload.apellido = form.apellido.trim()
+      if (form.email.trim()    !== socio.email)    payload.email    = form.email.trim()
+      if (form.telefono.trim() !== socio.telefono) payload.telefono = form.telefono.trim()
+      if (form.ciudad.trim()   !== socio.ciudad)   payload.ciudad   = form.ciudad.trim()
+      if (Object.keys(payload).length === 0) { onClose(); return }
+      const { data } = await api.patch(`/socios/${socio.id}`, payload)
+      toast.success('Perfil actualizado correctamente')
+      onGuardado(data)
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Error al guardar los cambios')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const campo = (label, key, type = 'text', placeholder = '') => (
+    <div>
+      <label className="block text-xs font-dm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
+        {label} {['nombre','apellido'].includes(key) && <span style={{ color: 'var(--color-accent)' }}>*</span>}
+      </label>
+      <input
+        type={type}
+        className="input text-sm"
+        style={errores[key] ? { borderColor: 'rgba(255,68,85,0.5)' } : {}}
+        placeholder={placeholder}
+        value={form[key]}
+        onChange={e => set(key, e.target.value)}
+      />
+      {errores[key] && <p className="text-xs font-dm mt-1" style={{ color: 'var(--color-danger)' }}>{errores[key]}</p>}
+    </div>
+  )
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 50 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        ref={focusRef}
+        className="w-full max-w-lg"
+        style={{ background: '#0A0A0A', border: '1px solid #1A1A1A', borderRadius: 12, boxShadow: '0 16px 48px rgba(0,0,0,0.7)' }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Editar perfil del socio"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1A1A1A' }}>
+          <div className="flex items-center gap-2">
+            <Pencil size={14} style={{ color: 'var(--color-accent)' }} aria-hidden="true" />
+            <h2 className="font-syne font-semibold text-sm" style={{ color: 'var(--color-text-primary)' }}>
+              Editar perfil — {socio.nombre_completo}
+            </h2>
+          </div>
+          <button onClick={onClose} className="transition-colors" style={{ color: '#555' }}
+            onMouseOver={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
+            onMouseOut={e => e.currentTarget.style.color = '#555'}
+            aria-label="Cerrar">
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Formulario */}
+        <form onSubmit={guardar} className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            {campo('Nombre', 'nombre', 'text', 'Juan')}
+            {campo('Apellido', 'apellido', 'text', 'García')}
+          </div>
+          {campo('Email', 'email', 'email', 'ejemplo@correo.com')}
+          <div className="grid grid-cols-2 gap-4">
+            {campo('Teléfono', 'telefono', 'tel', '3100000000')}
+            {campo('Ciudad', 'ciudad', 'text', 'Bogotá')}
+          </div>
+
+          {/* Cédula — solo lectura */}
+          <div>
+            <label className="block text-xs font-dm mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>Cédula</label>
+            <input className="input text-sm" value={socio.cedula} readOnly
+              style={{ color: '#555', cursor: 'not-allowed' }} />
+            <p className="text-xs font-dm mt-1" style={{ color: '#444' }}>La cédula no se puede modificar</p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose} className="btn-ghost text-sm py-2 px-4">Cancelar</button>
+            <button type="submit" disabled={guardando} className="btn-primary flex items-center gap-2 text-sm py-2 px-4">
+              {guardando ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <Save size={13} aria-hidden="true" />}
+              {guardando ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════
    PANTALLA COMPLETA DEL SOCIO
 ══════════════════════════════════════════════ */
-function SocioDetalle({ socio, onVolver, mensajeInicial = '' }) {
+function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeInicial = '' }) {
+  const [socio, setSocio] = useState(socioProp)
   const toast = useToast()
   const [detalle, setDetalle] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [chatHighlight, setChatHighlight] = useState(false)
   const [modalCorreo, setModalCorreo] = useState(false)
+  const [modalEditar, setModalEditar] = useState(false)
   const chatInputRef = useRef(null)
 
   useEffect(() => {
@@ -1311,6 +1456,15 @@ function SocioDetalle({ socio, onVolver, mensajeInicial = '' }) {
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <RiskBadge nivel={nivel} score={score} showScore />
+          <button
+            onClick={() => setModalEditar(true)}
+            className="flex items-center gap-1.5 text-xs font-dm py-1.5 px-3 transition-all"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid #2A2A2A', color: '#888', borderRadius: 6 }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#888' }}
+          >
+            <Pencil size={11} aria-hidden="true" /> Editar
+          </button>
           <button
             onClick={() => {
               if (socio.telefono && socio.telefono !== '0000000000') window.open(`tel:${socio.telefono}`, '_self')
@@ -1542,6 +1696,17 @@ function SocioDetalle({ socio, onVolver, mensajeInicial = '' }) {
           onEnviado={() => setModalCorreo(false)}
         />
       )}
+      {modalEditar && (
+        <ModalEditarSocio
+          socio={socio}
+          onClose={() => setModalEditar(false)}
+          onGuardado={actualizado => {
+            setSocio(prev => ({ ...prev, ...actualizado }))
+            if (onSocioActualizado) onSocioActualizado(actualizado)
+            setModalEditar(false)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -1605,7 +1770,12 @@ export default function Socios() {
   if (socioDetalle) {
     return (
       <>
-        <SocioDetalle socio={socioDetalle} onVolver={() => { setSocioDetalle(null); setMensajeInicial('') }} mensajeInicial={mensajeInicial} />
+        <SocioDetalle
+          socio={socioDetalle}
+          onVolver={() => { setSocioDetalle(null); setMensajeInicial('') }}
+          mensajeInicial={mensajeInicial}
+          onSocioActualizado={actualizado => setSocioDetalle(prev => ({ ...prev, ...actualizado }))}
+        />
         {/* Drawer sigue disponible si el usuario lo abrió desde el drawer antes de navegar — no aplica acá */}
       </>
     )
