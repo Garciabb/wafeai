@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Users, Brain, RefreshCw, Bell, Zap, FileDown } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, AlertTriangle, Users, Brain, RefreshCw, Bell, Zap, FileDown, CalendarCheck, Clock } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, ReferenceLine,
@@ -27,6 +27,7 @@ export default function Dashboard() {
   const [riesgoAlto, setRiesgoAlto] = useState([])
   const [actividad, setActividad] = useState([])
   const [distribucion, setDistribucion] = useState(null)
+  const [promesasResumen, setPromesasResumen] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [actualizando, setActualizando] = useState(false)
 
@@ -34,18 +35,20 @@ export default function Dashboard() {
     if (!silencioso) setCargando(true)
     else setActualizando(true)
     try {
-      const [kpisR, evolR, riesgoR, actividadR, distR] = await Promise.all([
+      const [kpisR, evolR, riesgoR, actividadR, distR, promesasR] = await Promise.all([
         api.get('/dashboard/kpis'),
         api.get('/dashboard/evolucion-cartera'),
         api.get('/dashboard/socios-alto-riesgo?limite=5'),
         api.get('/dashboard/actividad-reciente?limite=10'),
         api.get('/dashboard/resumen-riesgo'),
+        api.get('/api/promesas/resumen').catch(() => ({ data: null })),
       ])
       setKpis(kpisR.data)
       setEvolucion(evolR.data)
       setRiesgoAlto(riesgoR.data)
       setActividad(actividadR.data)
       setDistribucion(distR.data)
+      setPromesasResumen(promesasR.data)
       if (silencioso) toast.success('Dashboard actualizado')
     } catch {
       toast.error('Error al cargar el dashboard. Verifica la conexión.')
@@ -399,6 +402,91 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
+
+      {/* Promesas de Pago */}
+      {promesasResumen && (promesasResumen.total_pendientes > 0 || promesasResumen.vencidas > 0) && (
+        <section aria-label="Promesas de pago" className="mt-6">
+          <div className="card p-0 overflow-hidden">
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <div className="flex items-center gap-2">
+                <CalendarCheck size={16} style={{ color: '#FFB800' }} aria-hidden="true" />
+                <div>
+                  <h2 className="font-syne font-semibold text-base" style={{ color: 'var(--color-text-primary)' }}>
+                    Promesas de Pago
+                  </h2>
+                  <p className="text-xs font-dm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                    {promesasResumen.total_pendientes} pendiente{promesasResumen.total_pendientes !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate('/socios')}
+                className="text-xs font-dm px-3 py-1.5 transition-colors"
+                style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)' }}
+                onMouseOver={e => { e.currentTarget.style.color = 'var(--color-accent)'; e.currentTarget.style.borderColor = 'var(--color-accent)' }}
+                onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
+              >
+                Ver socios →
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-0 divide-x" style={{ borderColor: 'var(--color-border)' }}>
+              {/* Vencen hoy */}
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock size={13} style={{ color: promesasResumen.vencen_hoy > 0 ? '#FFB800' : '#444' }} aria-hidden="true" />
+                  <span className="font-dm text-xs" style={{ color: '#666' }}>Vencen hoy</span>
+                </div>
+                {promesasResumen.vencen_hoy === 0 ? (
+                  <p className="font-dm text-sm" style={{ color: '#444' }}>Ninguna promesa vence hoy</p>
+                ) : (
+                  <>
+                    <p className="font-syne font-bold" style={{ color: '#FFB800', fontSize: 22 }}>{promesasResumen.vencen_hoy}</p>
+                    <p className="font-dm text-xs mt-1" style={{ color: '#555' }}>
+                      Total: ${(promesasResumen.monto_vence_hoy || 0).toLocaleString('es-CO')} COP
+                    </p>
+                    <div className="mt-3 space-y-1.5">
+                      {(promesasResumen.promesas_vencen_hoy || []).slice(0, 3).map(p => (
+                        <div
+                          key={p.id}
+                          className="flex items-center justify-between px-2.5 py-1.5 cursor-pointer transition-colors"
+                          style={{ background: 'rgba(255,184,0,0.06)', border: '1px solid rgba(255,184,0,0.15)', borderRadius: 6 }}
+                          onClick={() => navigate('/socios', { state: { abrirSocioId: p.socio_id } })}
+                        >
+                          <span className="font-dm text-xs truncate" style={{ color: 'var(--color-text-primary)' }}>{p.socio_nombre}</span>
+                          <span className="font-syne font-bold text-xs flex-shrink-0 ml-2" style={{ color: '#FFB800' }}>
+                            ${(p.monto_prometido || 0).toLocaleString('es-CO')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Vencidas sin cumplir */}
+              <div className="p-5" style={{ borderLeft: '1px solid var(--color-border)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle size={13} style={{ color: promesasResumen.vencidas > 0 ? '#FF4455' : '#444' }} aria-hidden="true" />
+                  <span className="font-dm text-xs" style={{ color: '#666' }}>Vencidas sin cumplir</span>
+                </div>
+                {promesasResumen.vencidas === 0 ? (
+                  <p className="font-dm text-sm" style={{ color: '#444' }}>Sin promesas vencidas</p>
+                ) : (
+                  <>
+                    <p className="font-syne font-bold" style={{ color: '#FF4455', fontSize: 22 }}>{promesasResumen.vencidas}</p>
+                    <p className="font-dm text-xs mt-1" style={{ color: '#555' }}>
+                      Total: ${(promesasResumen.monto_vencido || 0).toLocaleString('es-CO')} COP
+                    </p>
+                    <p className="font-dm text-xs mt-3" style={{ color: '#555' }}>
+                      Estos socios prometieron pagar pero no cumplieron. Considera escalar la gestión.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   )
 }

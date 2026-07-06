@@ -4,6 +4,7 @@ import {
   Search, Plus, Upload, Download, ChevronLeft, ChevronRight,
   Brain, X, Loader2, CheckCircle, AlertTriangle, MessageSquare,
   ArrowLeft, Phone, Mail, Send, User, Paperclip, Bold, Italic, Underline, Pencil, Save,
+  CalendarCheck, Check, Trash2, Clock,
 } from 'lucide-react'
 import RiskBadge from '../components/RiskBadge'
 import { SkeletonTable } from '../components/Skeleton'
@@ -1430,6 +1431,20 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
   const [modalEditar, setModalEditar] = useState(false)
   const chatInputRef = useRef(null)
 
+  const [promesas, setPromesas] = useState([])
+  const [formPromesa, setFormPromesa] = useState(false)
+  const [promesaForm, setPromesaForm] = useState({ monto: '', fecha: '', nota: '' })
+  const [guardandoPromesa, setGuardandoPromesa] = useState(false)
+
+  const cargarPromesas = useCallback(async () => {
+    try {
+      const { data } = await api.get(`/api/promesas/?socio_id=${socio.id}`)
+      setPromesas(data)
+    } catch {}
+  }, [socio.id])
+
+  useEffect(() => { cargarPromesas() }, [cargarPromesas])
+
   useEffect(() => {
     window.scrollTo(0, 0)
     const cargar = async () => {
@@ -1718,6 +1733,176 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
                   <Mail size={15} aria-hidden="true" /> Enviar cobranza
                 </button>
               </div>
+            </div>
+
+            {/* Card 4 — Promesas de Pago */}
+            <div style={cs}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <CalendarCheck size={14} style={{ color: '#FFB800' }} aria-hidden="true" />
+                  <span className="font-syne font-bold" style={{ color: 'var(--color-text-primary)', fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    Promesas de Pago
+                  </span>
+                  {promesas.filter(p => p.estado === 'pendiente').length > 0 && (
+                    <span className="font-dm text-xs px-1.5 py-0.5" style={{ background: 'rgba(255,184,0,0.15)', color: '#FFB800', borderRadius: 4, fontSize: 10 }}>
+                      {promesas.filter(p => p.estado === 'pendiente').length} pendiente{promesas.filter(p => p.estado === 'pendiente').length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => { setFormPromesa(v => !v); setPromesaForm({ monto: '', fecha: '', nota: '' }) }}
+                  className="flex items-center gap-1 font-dm text-xs px-2.5 py-1 transition-all"
+                  style={{ background: formPromesa ? 'rgba(0,229,160,0.1)' : '#111', border: '1px solid #2A2A2A', borderRadius: 6, color: formPromesa ? '#00E5A0' : '#666' }}
+                >
+                  <Plus size={11} aria-hidden="true" /> Nueva promesa
+                </button>
+              </div>
+
+              {/* Formulario nueva promesa */}
+              {formPromesa && (
+                <form
+                  onSubmit={async e => {
+                    e.preventDefault()
+                    if (!promesaForm.monto || !promesaForm.fecha) return
+                    setGuardandoPromesa(true)
+                    try {
+                      await api.post('/api/promesas/', {
+                        socio_id: socio.id,
+                        monto_prometido: parseFloat(promesaForm.monto),
+                        fecha_prometida: promesaForm.fecha,
+                        nota: promesaForm.nota || null,
+                      })
+                      await cargarPromesas()
+                      setFormPromesa(false)
+                      toast.success('Promesa registrada ✓')
+                    } catch (err) {
+                      toast.error(err.response?.data?.detail || 'Error al registrar promesa')
+                    } finally { setGuardandoPromesa(false) }
+                  }}
+                  className="mb-4 p-3 space-y-2"
+                  style={{ background: 'rgba(255,184,0,0.04)', border: '1px solid rgba(255,184,0,0.15)', borderRadius: 8 }}
+                >
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-dm mb-1" style={{ color: '#555' }}>Monto prometido (COP)</label>
+                      <input
+                        type="number" min="1" step="1000" required
+                        placeholder="ej. 500000"
+                        value={promesaForm.monto}
+                        onChange={e => setPromesaForm(p => ({ ...p, monto: e.target.value }))}
+                        className="input text-sm w-full"
+                        style={{ fontSize: 13 }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-dm mb-1" style={{ color: '#555' }}>Fecha prometida</label>
+                      <input
+                        type="date" required
+                        min={new Date().toISOString().split('T')[0]}
+                        value={promesaForm.fecha}
+                        onChange={e => setPromesaForm(p => ({ ...p, fecha: e.target.value }))}
+                        className="input text-sm w-full"
+                        style={{ fontSize: 13 }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-dm mb-1" style={{ color: '#555' }}>Nota (opcional)</label>
+                    <input
+                      type="text" maxLength={200}
+                      placeholder="ej. Prometió pagar al cobrar nómina"
+                      value={promesaForm.nota}
+                      onChange={e => setPromesaForm(p => ({ ...p, nota: e.target.value }))}
+                      className="input text-sm w-full"
+                      style={{ fontSize: 13 }}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button type="button" onClick={() => setFormPromesa(false)} className="btn-ghost text-xs px-3 py-1.5">Cancelar</button>
+                    <button type="submit" disabled={guardandoPromesa} className="btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5">
+                      {guardandoPromesa ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                      Registrar
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Lista de promesas */}
+              {promesas.length === 0 ? (
+                <p className="font-dm text-sm text-center py-4" style={{ color: '#444' }}>
+                  Sin promesas registradas. Úsalas cuando el socio se comprometa a pagar.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {promesas.map(p => {
+                    const esVencida = p.vencida
+                    const color = p.estado === 'cumplida' ? '#00E5A0' : p.estado === 'incumplida' ? '#FF4455' : esVencida ? '#FF6B7A' : '#FFB800'
+                    const bgColor = p.estado === 'cumplida' ? 'rgba(0,229,160,0.06)' : p.estado === 'incumplida' ? 'rgba(255,68,85,0.06)' : esVencida ? 'rgba(255,68,85,0.06)' : 'rgba(255,184,0,0.06)'
+                    const etiqueta = p.estado === 'cumplida' ? 'Cumplida' : p.estado === 'incumplida' ? 'No cumplida' : esVencida ? 'Vencida' : `En ${p.dias_restantes}d`
+                    const fecha = new Date(p.fecha_prometida + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
+                    return (
+                      <div key={p.id} className="flex items-center gap-3 px-3 py-2.5" style={{ background: bgColor, border: `1px solid ${color}22`, borderRadius: 8 }}>
+                        <div className="flex-shrink-0 text-center" style={{ minWidth: 42 }}>
+                          <Clock size={13} style={{ color, margin: '0 auto 2px' }} aria-hidden="true" />
+                          <p className="font-dm" style={{ color, fontSize: 9, fontWeight: 600, textTransform: 'uppercase' }}>{etiqueta}</p>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-syne font-bold" style={{ color: 'var(--color-text-primary)', fontSize: 14 }}>
+                            ${p.monto_prometido.toLocaleString('es-CO')} COP
+                          </p>
+                          <p className="font-dm" style={{ color: '#555', fontSize: 11 }}>{fecha}{p.nota ? ` · ${p.nota}` : ''}</p>
+                        </div>
+                        {p.estado === 'pendiente' && (
+                          <div className="flex gap-1 flex-shrink-0">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await api.patch(`/api/promesas/${p.id}`, { estado: 'cumplida' })
+                                  await cargarPromesas()
+                                  toast.success('Promesa marcada como cumplida ✓')
+                                } catch { toast.error('Error al actualizar') }
+                              }}
+                              title="Marcar cumplida"
+                              className="flex items-center justify-center transition-all"
+                              style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(0,229,160,0.3)', background: 'rgba(0,229,160,0.08)', color: '#00E5A0' }}
+                            >
+                              <Check size={12} aria-hidden="true" />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await api.patch(`/api/promesas/${p.id}`, { estado: 'incumplida' })
+                                  await cargarPromesas()
+                                  toast.error('Promesa marcada como no cumplida')
+                                } catch { toast.error('Error al actualizar') }
+                              }}
+                              title="Marcar incumplida"
+                              className="flex items-center justify-center transition-all"
+                              style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(255,68,85,0.3)', background: 'rgba(255,68,85,0.08)', color: '#FF4455' }}
+                            >
+                              <X size={12} aria-hidden="true" />
+                            </button>
+                          </div>
+                        )}
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm('¿Eliminar esta promesa?')) return
+                            try {
+                              await api.delete(`/api/promesas/${p.id}`)
+                              await cargarPromesas()
+                            } catch { toast.error('Error al eliminar') }
+                          }}
+                          title="Eliminar"
+                          className="flex items-center justify-center transition-all flex-shrink-0"
+                          style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid #222', background: 'transparent', color: '#444' }}
+                        >
+                          <Trash2 size={11} aria-hidden="true" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
           </div>

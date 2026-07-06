@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from database import Base, engine
-from routes import auth, dashboard, socios, prediccion, cobranza, alertas
+from routes import auth, dashboard, socios, prediccion, cobranza, alertas, promesas
 from config import get_settings
 
 settings = get_settings()
@@ -60,6 +60,7 @@ app.include_router(socios.router)
 app.include_router(prediccion.router)
 app.include_router(cobranza.router)
 app.include_router(alertas.router)
+app.include_router(promesas.router)
 
 
 @app.get("/", tags=["Health"])
