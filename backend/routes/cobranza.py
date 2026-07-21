@@ -46,11 +46,14 @@ async def enviar_email_socio(
         raise HTTPException(status_code=404, detail="Socio no encontrado")
 
     credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).first()
+    dias = socio.dias_mora_maximo
+    dias_mora_color = "#CC0000" if dias > 30 else "#E67E00" if dias > 0 else "#00A67E"
     variables = {
         "cooperativa": "Cooperativa Financiera",
         "monto": f"${credito.saldo_pendiente:,.0f} COP" if credito else "N/A",
         "fecha_vencimiento": credito.fecha_vencimiento.strftime("%d/%m/%Y") if credito else "N/A",
-        "dias_mora": str(socio.dias_mora_maximo),
+        "dias_mora": str(dias),
+        "dias_mora_color": dias_mora_color,
         **(data.variables_extra or {}),
     }
 
@@ -142,11 +145,13 @@ async def lanzar_campana(
 
     for socio in socios:
         credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).first()
+        dias = socio.dias_mora_maximo
         variables = {
             "cooperativa": "Cooperativa Financiera",
             "monto": f"${credito.saldo_pendiente:,.0f} COP" if credito else "N/A",
             "fecha_vencimiento": credito.fecha_vencimiento.strftime("%d/%m/%Y") if credito else "N/A",
-            "dias_mora": str(socio.dias_mora_maximo),
+            "dias_mora": str(dias),
+            "dias_mora_color": "#CC0000" if dias > 30 else "#E67E00" if dias > 0 else "#00A67E",
         }
 
         if data.tipo_mensaje in ("email", "ambos"):

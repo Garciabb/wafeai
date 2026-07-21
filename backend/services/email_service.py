@@ -7,59 +7,218 @@ PLANTILLAS = {
     "recordatorio_pago": {
         "asunto": "Recordatorio de pago — {cooperativa}",
         "html": """
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-  <div style="background: #070707; padding: 24px; text-align: center;">
-    <h1 style="color: #00E5A0; margin: 0; font-size: 24px;">WafeAI</h1>
-    <p style="color: #888; margin: 4px 0 0; font-size: 13px;">Gestión Inteligente de Cartera</p>
-  </div>
-  <div style="padding: 32px 24px;">
-    <p style="color: #333; font-size: 15px;">Estimado/a <strong>{nombre}</strong>,</p>
-    <p style="color: #555; font-size: 14px; line-height: 1.6;">
-      Le recordamos que tiene una obligación pendiente con <strong>{cooperativa}</strong>
-      por un valor de <strong style="color: #00A67E;">{monto}</strong>.
-    </p>
-    <p style="color: #555; font-size: 14px; line-height: 1.6;">
-      Por favor realice su pago antes del <strong>{fecha_vencimiento}</strong>
-      para evitar cargos adicionales.
-    </p>
-    <div style="background: #f8f8f8; border-left: 4px solid #00E5A0; padding: 16px; margin: 24px 0; border-radius: 4px;">
-      <p style="margin: 0; color: #333; font-size: 13px;"><strong>Días en mora:</strong> {dias_mora}</p>
-      <p style="margin: 8px 0 0; color: #333; font-size: 13px;"><strong>Saldo pendiente:</strong> {monto}</p>
-    </div>
-    <p style="color: #555; font-size: 14px;">
-      Si ya realizó su pago, por favor ignore este mensaje.
-    </p>
-  </div>
-  <div style="background: #070707; padding: 16px; text-align: center;">
-    <p style="color: #555; margin: 0; font-size: 12px;">WafeAI — Plataforma de Gestión de Cartera</p>
-  </div>
-</div>
+<!DOCTYPE html>
+<html lang="es">
+<body style="margin:0;padding:0;background:#F4F5F7;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F5F7;padding:32px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+      <!-- HEADER -->
+      <tr>
+        <td style="background:#0A0A0A;padding:28px 40px;text-align:center;">
+          <p style="margin:0;font-size:26px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;">
+            WAFE<span style="color:#00E5A0;">AI</span>
+          </p>
+          <p style="margin:6px 0 0;font-size:12px;color:#555;letter-spacing:0.08em;text-transform:uppercase;">
+            Gestión Inteligente de Cartera
+          </p>
+        </td>
+      </tr>
+
+      <!-- BANNER VERDE -->
+      <tr>
+        <td style="background:#00E5A0;padding:12px 40px;">
+          <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0A0A0A;">
+            Recordatorio de pago
+          </p>
+        </td>
+      </tr>
+
+      <!-- SALUDO -->
+      <tr>
+        <td style="padding:36px 40px 0;">
+          <p style="margin:0;font-size:20px;font-weight:700;color:#111111;">
+            Hola, <span style="color:#00A67E;">{nombre}</span>
+          </p>
+          <p style="margin:12px 0 0;font-size:15px;color:#555555;line-height:1.7;">
+            Te escribimos de parte de <strong>{cooperativa}</strong> para recordarte que tienes
+            una cuota pendiente. Regularizar tu situación evita cargos adicionales y protege
+            tu historial crediticio.
+          </p>
+        </td>
+      </tr>
+
+      <!-- TARJETA DE DEUDA -->
+      <tr>
+        <td style="padding:28px 40px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#F8F9FA;border-radius:10px;overflow:hidden;border:1px solid #E8E8E8;">
+            <tr>
+              <td style="padding:20px 24px;border-bottom:1px solid #E8E8E8;">
+                <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#999;">Saldo pendiente</p>
+                <p style="margin:6px 0 0;font-size:30px;font-weight:900;color:#111;">{monto}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50%" style="padding:16px 24px;border-right:1px solid #E8E8E8;">
+                      <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#999;">Días en mora</p>
+                      <p style="margin:4px 0 0;font-size:18px;font-weight:800;color:{dias_mora_color};">{dias_mora} días</p>
+                    </td>
+                    <td width="50%" style="padding:16px 24px;">
+                      <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#999;">Fecha límite</p>
+                      <p style="margin:4px 0 0;font-size:18px;font-weight:800;color:#111;">{fecha_vencimiento}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- MENSAJE -->
+      <tr>
+        <td style="padding:0 40px 28px;">
+          <p style="margin:0;font-size:14px;color:#777;line-height:1.7;">
+            Si ya realizaste tu pago, ignora este mensaje. Si tienes alguna duda o necesitas
+            hablar con un asesor, responde este correo o contáctanos directamente.
+          </p>
+        </td>
+      </tr>
+
+      <!-- DIVIDER -->
+      <tr><td style="padding:0 40px;"><div style="height:1px;background:#EEEEEE;"></div></td></tr>
+
+      <!-- FOOTER -->
+      <tr>
+        <td style="padding:24px 40px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#BBBBBB;">
+            Este mensaje fue enviado por <strong style="color:#999;">{cooperativa}</strong>
+            a través de <strong style="color:#999;">WafeAI</strong>.
+          </p>
+          <p style="margin:6px 0 0;font-size:11px;color:#CCCCCC;">
+            Si crees que recibiste este correo por error, ignóralo.
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>
 """,
     },
     "mora_urgente": {
-        "asunto": "URGENTE: Su crédito requiere atención inmediata — {cooperativa}",
+        "asunto": "Aviso importante sobre tu crédito — {cooperativa}",
         "html": """
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-  <div style="background: #070707; padding: 24px; text-align: center;">
-    <h1 style="color: #00E5A0; margin: 0; font-size: 24px;">WafeAI</h1>
-  </div>
-  <div style="background: #FFF5F5; border-top: 4px solid #FF4455; padding: 16px 24px;">
-    <p style="color: #CC0000; margin: 0; font-weight: bold; font-size: 14px;">Aviso urgente de cobranza</p>
-  </div>
-  <div style="padding: 32px 24px;">
-    <p style="color: #333; font-size: 15px;">Estimado/a <strong>{nombre}</strong>,</p>
-    <p style="color: #555; font-size: 14px; line-height: 1.6;">
-      Su obligación crediticia presenta <strong style="color: #CC0000;">{dias_mora} días de mora</strong>
-      con un saldo pendiente de <strong style="color: #CC0000;">{monto}</strong>.
-    </p>
-    <p style="color: #555; font-size: 14px; line-height: 1.6;">
-      Tenemos opciones de refinanciamiento disponibles para usted.
-    </p>
-  </div>
-  <div style="background: #070707; padding: 16px; text-align: center;">
-    <p style="color: #555; margin: 0; font-size: 12px;">WafeAI — Plataforma de Gestión de Cartera</p>
-  </div>
-</div>
+<!DOCTYPE html>
+<html lang="es">
+<body style="margin:0;padding:0;background:#F4F5F7;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F5F7;padding:32px 0;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+      <!-- HEADER -->
+      <tr>
+        <td style="background:#0A0A0A;padding:28px 40px;text-align:center;">
+          <p style="margin:0;font-size:26px;font-weight:900;letter-spacing:-0.5px;color:#ffffff;">
+            WAFE<span style="color:#00E5A0;">AI</span>
+          </p>
+          <p style="margin:6px 0 0;font-size:12px;color:#555;letter-spacing:0.08em;text-transform:uppercase;">
+            Gestión Inteligente de Cartera
+          </p>
+        </td>
+      </tr>
+
+      <!-- BANNER ROJO -->
+      <tr>
+        <td style="background:#FF4455;padding:12px 40px;">
+          <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#ffffff;">
+            Aviso urgente — Acción requerida
+          </p>
+        </td>
+      </tr>
+
+      <!-- SALUDO -->
+      <tr>
+        <td style="padding:36px 40px 0;">
+          <p style="margin:0;font-size:20px;font-weight:700;color:#111111;">
+            Hola, <span style="color:#CC0000;">{nombre}</span>
+          </p>
+          <p style="margin:12px 0 0;font-size:15px;color:#555555;line-height:1.7;">
+            Tu crédito con <strong>{cooperativa}</strong> presenta una mora que requiere
+            atención inmediata. Es importante que te pongas al día para evitar consecuencias
+            adicionales sobre tu historial crediticio.
+          </p>
+        </td>
+      </tr>
+
+      <!-- TARJETA DE DEUDA -->
+      <tr>
+        <td style="padding:28px 40px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#FFF5F5;border-radius:10px;overflow:hidden;border:1px solid #FFCCCC;">
+            <tr>
+              <td style="padding:20px 24px;border-bottom:1px solid #FFCCCC;">
+                <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#CC8888;">Saldo pendiente</p>
+                <p style="margin:6px 0 0;font-size:30px;font-weight:900;color:#CC0000;">{monto}</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0;">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="50%" style="padding:16px 24px;border-right:1px solid #FFCCCC;">
+                      <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#CC8888;">Días en mora</p>
+                      <p style="margin:4px 0 0;font-size:18px;font-weight:800;color:#CC0000;">{dias_mora} días</p>
+                    </td>
+                    <td width="50%" style="padding:16px 24px;">
+                      <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#CC8888;">Fecha límite</p>
+                      <p style="margin:4px 0 0;font-size:18px;font-weight:800;color:#111;">{fecha_vencimiento}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- MENSAJE -->
+      <tr>
+        <td style="padding:0 40px 28px;">
+          <p style="margin:0;font-size:14px;color:#777;line-height:1.7;">
+            Si ya realizaste tu pago, ignora este mensaje. De lo contrario, te recomendamos
+            contactarnos a la brevedad — tenemos opciones de acuerdo de pago disponibles
+            para regularizar tu situación.
+          </p>
+        </td>
+      </tr>
+
+      <!-- DIVIDER -->
+      <tr><td style="padding:0 40px;"><div style="height:1px;background:#EEEEEE;"></div></td></tr>
+
+      <!-- FOOTER -->
+      <tr>
+        <td style="padding:24px 40px;text-align:center;">
+          <p style="margin:0;font-size:12px;color:#BBBBBB;">
+            Este mensaje fue enviado por <strong style="color:#999;">{cooperativa}</strong>
+            a través de <strong style="color:#999;">WafeAI</strong>.
+          </p>
+          <p style="margin:6px 0 0;font-size:11px;color:#CCCCCC;">
+            Si crees que recibiste este correo por error, ignóralo.
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>
 """,
     },
 }
@@ -93,6 +252,7 @@ async def enviar_email(
             "monto": "N/A",
             "fecha_vencimiento": "N/A",
             "dias_mora": "0",
+            "dias_mora_color": "#00A67E",
             **variables,
         }
         asunto = tpl["asunto"].format(**vars_completas)

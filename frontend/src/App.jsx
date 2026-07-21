@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { ToastProvider } from './context/ToastContext'
+import { ClientProvider } from './context/ClientContext'
 import Layout from './components/Layout'
 import { SkeletonKPI } from './components/Skeleton'
 
@@ -30,6 +31,7 @@ function RutaProtegida({ children }) {
 
 export default function App() {
   return (
+    <ClientProvider>
     <ToastProvider>
       <BrowserRouter>
         {/* Skip link — accesibilidad por teclado */}
@@ -76,5 +78,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </ToastProvider>
+    </ClientProvider>
   )
 }

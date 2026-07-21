@@ -1,17 +1,25 @@
 import { NavLink, Link } from 'react-router-dom'
-import { LayoutDashboard, Users, Brain, MessageSquare, Bell, Calculator, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Brain, MessageSquare, Bell, Calculator, LogOut, ChevronDown } from 'lucide-react'
+import { useState } from 'react'
 import Logo from './Logo'
-
-const nav = [
-  { to: '/',            icono: LayoutDashboard, label: 'Dashboard' },
-  { to: '/alertas',     icono: Bell,             label: 'Alertas' },
-  { to: '/socios',      icono: Users,            label: 'Socios' },
-  { to: '/prediccion',  icono: Brain,            label: 'Predicción IA' },
-  { to: '/cobranza',    icono: MessageSquare,    label: 'Cobranza' },
-  { to: '/simulador',   icono: Calculator,       label: 'Simulador ROI' },
-]
+import { useClient, CLIENT_CONFIGS } from '../context/ClientContext'
 
 export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
+  const { config, clientTipo, cambiarCliente } = useClient()
+  const [showClientMenu, setShowClientMenu] = useState(false)
+
+  // Nav dinámico según módulos habilitados del cliente
+  const allNav = [
+    { to: '/',           icono: LayoutDashboard, label: 'Dashboard',      key: 'dashboard' },
+    { to: '/alertas',    icono: Bell,             label: 'Alertas',        key: 'alertas' },
+    { to: '/socios',     icono: Users,            label: config.terminos.socios.charAt(0).toUpperCase() + config.terminos.socios.slice(1), key: 'socios' },
+    { to: '/prediccion', icono: Brain,            label: 'Predicción IA',  key: 'prediccion' },
+    { to: '/cobranza',   icono: MessageSquare,    label: 'Cobranza',       key: 'cobranza' },
+    { to: '/simulador',  icono: Calculator,       label: 'Simulador ROI',  key: 'simulador' },
+  ]
+
+  const nav = allNav.filter(n => config.modulos.includes(n.key))
+
   return (
     <aside
       className="w-64 h-screen flex flex-col fixed left-0 top-0 z-30"
@@ -22,12 +30,65 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
       <div className="p-6" style={{ borderBottom: '1px solid var(--color-border)' }}>
         <Logo size="md" />
         <p className="text-xs mt-1.5 font-dm" style={{ color: '#444' }}>
-          Gestión Inteligente de Cartera
+          Gestión Inteligente de {config.terminos.cartera.split(' ')[0] === 'portafolio' ? 'Portafolio' : 'Cartera'}
         </p>
       </div>
 
-      {/* Nav — semántico con role=navigation implícito en <nav> */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto" aria-label="Secciones de la aplicación">
+      {/* Selector de tipo de cliente — inline en sidebar */}
+      <div className="px-3 pt-3 relative">
+        <button
+          onClick={() => setShowClientMenu(p => !p)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded text-xs font-dm transition-all"
+          style={{
+            background: 'rgba(0,255,106,0.06)',
+            border: '1px solid rgba(0,255,106,0.2)',
+            color: 'var(--color-accent)',
+            cursor: 'pointer',
+          }}
+          aria-expanded={showClientMenu}
+          aria-haspopup="listbox"
+        >
+          <span>{config.emoji}</span>
+          <span className="flex-1 text-left truncate">{config.label}</span>
+          <ChevronDown size={12} className={showClientMenu ? 'rotate-180' : ''} style={{ transition: 'transform 0.2s' }} />
+        </button>
+
+        {showClientMenu && (
+          <div
+            className="absolute left-3 right-3 top-full mt-1 z-50 py-1"
+            style={{
+              background: '#111',
+              border: '1px solid var(--color-border)',
+              borderRadius: 6,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+            }}
+            role="listbox"
+            aria-label="Seleccionar tipo de cliente"
+          >
+            {Object.values(CLIENT_CONFIGS).map(cfg => (
+              <button
+                key={cfg.tipo}
+                role="option"
+                aria-selected={clientTipo === cfg.tipo}
+                onClick={() => { cambiarCliente(cfg.tipo); setShowClientMenu(false) }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-dm transition-colors text-left"
+                style={{
+                  background: clientTipo === cfg.tipo ? 'rgba(0,255,106,0.08)' : 'transparent',
+                  color: clientTipo === cfg.tipo ? 'var(--color-accent)' : '#888',
+                  cursor: 'pointer',
+                  border: 'none',
+                }}
+              >
+                <span>{cfg.emoji}</span>
+                <span>{cfg.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto mt-2" aria-label="Secciones de la aplicación">
         {nav.map(({ to, icono: Icono, label }) => (
           <NavLink
             key={to}
@@ -63,10 +124,9 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
         ))}
       </nav>
 
-      {/* Separador sutil */}
       <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', margin: 0 }} />
 
-      {/* Usuario — clic para ir a /perfil */}
+      {/* Usuario */}
       <div className="p-3">
         <div
           className="flex items-center gap-3 px-3 py-2.5"
@@ -109,7 +169,9 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
             <LogOut size={15} aria-hidden="true" />
           </button>
         </div>
-        <p className="text-center font-dm mt-2" style={{ color: '#333', fontSize: 10 }}>v1.0 MVP</p>
+        <p className="text-center font-dm mt-2" style={{ color: '#333', fontSize: 10 }}>
+          v1.0 MVP · {config.emoji} {config.label}
+        </p>
       </div>
     </aside>
   )

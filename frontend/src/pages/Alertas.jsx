@@ -4,6 +4,7 @@ import { Bell, CheckCheck, Filter, AlertTriangle, Info, Zap, Phone, MessageSquar
 import { SkeletonBlock } from '../components/Skeleton'
 import { useToast } from '../context/ToastContext'
 import api from '../api/client'
+import { useClient } from '../context/ClientContext'
 
 const PRIORIDAD_CONFIG = {
   urgente: { cls: 'text-[#FF6B7A] bg-[#FF4455]/10 border-[#FF4455]/20', icono: AlertTriangle, label: 'Urgente' },
@@ -19,17 +20,18 @@ const TIPO_LABEL = {
   recupero:      'Recupero',
 }
 
-const buildMensaje = (alerta) => {
-  const nombre = alerta.socio?.split(' ')[0] || alerta.socio || 'socio'
+const buildMensaje = (alerta, terminos = { socio: 'socio', mora: 'mora' }, institucion = 'la cooperativa') => {
+  const nombre = alerta.socio?.split(' ')[0] || alerta.socio || terminos.socio
   const saldoPart = alerta.saldo
     ? ` de $${Number(alerta.saldo).toLocaleString('es-CO')} COP`
     : ''
-  return `Hola ${nombre}, te contactamos de la cooperativa. Notamos que tu crédito${saldoPart} podría necesitar atención pronta. ¿Tienes 5 minutos esta semana para que te orientemos? Queremos ayudarte antes de que llegue a mora.`
+  return `Hola ${nombre}, te contactamos de ${institucion}. Notamos que tu crédito${saldoPart} podría necesitar atención pronta. ¿Tienes 5 minutos esta semana para que te orientemos? Queremos ayudarte antes de que llegue a ${terminos.mora}.`
 }
 
 export default function Alertas() {
   const toast = useToast()
   const navigate = useNavigate()
+  const { config } = useClient()
   const [alertas, setAlertas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [filtro, setFiltro] = useState('')
@@ -77,7 +79,7 @@ export default function Alertas() {
       state: {
         abrirSocioId: alerta.socio_id,
         abrirChat: true,
-        mensajeInicial: buildMensaje(alerta),
+        mensajeInicial: buildMensaje(alerta, config.terminos, config.institucion),
       }
     })
   }

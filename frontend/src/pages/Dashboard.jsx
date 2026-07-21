@@ -10,6 +10,7 @@ import RiskBadge from '../components/RiskBadge'
 import { SkeletonKPI, SkeletonChart, SkeletonTable } from '../components/Skeleton'
 import api from '../api/client'
 import { useToast } from '../context/ToastContext'
+import { useClient } from '../context/ClientContext'
 
 const fmt = (n) => {
   if (!n) return '$0'
@@ -22,6 +23,8 @@ const fmt = (n) => {
 export default function Dashboard() {
   const toast = useToast()
   const navigate = useNavigate()
+  const { config } = useClient()
+  const bench = config.benchmark
   const [kpis, setKpis] = useState(null)
   const [evolucion, setEvolucion] = useState([])
   const [riesgoAlto, setRiesgoAlto] = useState([])
@@ -115,20 +118,25 @@ export default function Dashboard() {
           ) : (
             <>
               <KPICard
-                titulo="Pérdida Evitable"
+                titulo={config.kpis.perdida_evitable?.label || 'Pérdida Evitable'}
                 valor={fmt(perdidaEvitable)}
-                subtitulo="Saldo en riesgo ALTO · actúa hoy"
+                subtitulo={`Saldo en riesgo ALTO · actúa hoy`}
                 icono={TrendingDown}
               />
-              <KPICard titulo="Cartera Total"       valor={fmt(kpis?.cartera_total || 0)}      subtitulo={`${kpis?.total_socios || 0} socios activos`}           icono={DollarSign} />
               <KPICard
-                titulo="Cartera Vencida"
+                titulo={config.terminos.cartera.charAt(0).toUpperCase() + config.terminos.cartera.slice(1)}
+                valor={fmt(kpis?.cartera_total || 0)}
+                subtitulo={`${kpis?.total_socios || 0} ${config.terminos.socios} activos`}
+                icono={DollarSign}
+              />
+              <KPICard
+                titulo={config.kpis.mora_actual?.label || 'Cartera Vencida'}
                 valor={fmt(kpis?.cartera_vencida || 0)}
-                subtitulo={`Tu mora: ${kpis?.porcentaje_mora || 0}% · Sector: 4.1%`}
+                subtitulo={`Tu mora: ${kpis?.porcentaje_mora || 0}% · Sector: ${bench.valor}%`}
                 icono={AlertTriangle}
               />
               <KPICard titulo="Tasa de Recupero"    valor={`${kpis?.tasa_recupero || 0}%`}    subtitulo={`${fmt(kpis?.recupero_mes || 0)} recuperado este mes`} icono={TrendingUp} acento />
-              <KPICard titulo="Alertas IA Activas"  valor={kpis?.alertas_activas || 0}         subtitulo={`${kpis?.socios_en_riesgo_alto || 0} en riesgo alto`}    icono={Brain} />
+              <KPICard titulo="Alertas IA Activas"  valor={kpis?.alertas_activas || 0}         subtitulo={`${kpis?.socios_en_riesgo_alto || 0} en riesgo ${config.terminos.mora === 'default' ? 'default' : 'alto'}`}    icono={Brain} />
             </>
           )}
         </div>
@@ -208,11 +216,11 @@ export default function Dashboard() {
                     <Line type="monotone" dataKey="cartera_vencida" stroke="var(--color-danger)"        strokeWidth={1.5} dot={false} name="Vencida" />
                     {evolucion.length > 0 && kpis?.cartera_total > 0 && (
                       <ReferenceLine
-                        y={kpis.cartera_total * 0.041 / 1_000_000}
-                        stroke="#888"
+                        y={kpis.cartera_total * (bench.valor / 100) / 1_000_000}
+                        stroke={bench.color || '#888'}
                         strokeDasharray="4 3"
                         strokeWidth={1}
-                        label={{ value: 'Sector 4.1%', position: 'insideTopRight', fontSize: 10, fill: '#888', fontFamily: 'DM Sans' }}
+                        label={{ value: `Sector ${bench.valor}%`, position: 'insideTopRight', fontSize: 10, fill: bench.color || '#888', fontFamily: 'DM Sans' }}
                       />
                     )}
                   </LineChart>
@@ -225,7 +233,7 @@ export default function Dashboard() {
                     <span className="w-3 h-px inline-block" style={{ background: 'var(--color-danger)' }} aria-hidden="true" /> Cartera vencida
                   </span>
                   <span className="flex items-center gap-2 text-xs font-dm" style={{ color: '#666' }}>
-                    <span className="w-3 h-px inline-block border-t border-dashed border-[#666]" aria-hidden="true" /> Benchmark sector 4.1%
+                    <span className="w-3 h-px inline-block border-t border-dashed border-[#666]" aria-hidden="true" /> {bench.label} {bench.valor}%
                   </span>
                 </div>
               </div>
@@ -235,7 +243,7 @@ export default function Dashboard() {
                 <h2 className="font-syne font-semibold text-base mb-1" style={{ color: 'var(--color-text-primary)' }}>
                   Distribución Riesgo
                 </h2>
-                <p className="text-xs font-dm mb-4" style={{ color: 'var(--color-text-secondary)' }}>Socios por nivel IA</p>
+                <p className="text-xs font-dm mb-4" style={{ color: 'var(--color-text-secondary)' }}>{config.terminos.socios.charAt(0).toUpperCase() + config.terminos.socios.slice(1)} por nivel IA</p>
                 <ResponsiveContainer width="100%" height={160}>
                   <PieChart role="img" aria-label="Gráfica de distribución de riesgo">
                     <Pie data={pieData} cx="50%" cy="50%" innerRadius={44} outerRadius={68} dataKey="value" paddingAngle={2}>
@@ -283,7 +291,7 @@ export default function Dashboard() {
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--color-border)' }}>
               <div>
                 <h2 className="font-syne font-semibold text-base" style={{ color: 'var(--color-text-primary)' }}>
-                  Socios en Mayor Riesgo
+                  {config.kpis.en_riesgo?.label || 'En Mayor Riesgo'}
                 </h2>
                 <p className="text-xs font-dm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Predicción IA — top 5</p>
               </div>
@@ -298,10 +306,10 @@ export default function Dashboard() {
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm" role="grid" aria-label="Tabla de socios con mayor riesgo">
+              <table className="w-full text-sm" role="grid" aria-label={`Tabla de ${config.terminos.socios} con mayor riesgo`}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    {['Socio', 'Score IA', 'Saldo', 'Acción'].map(h => (
+                    {[config.terminos.socio.charAt(0).toUpperCase() + config.terminos.socio.slice(1), 'Score IA', 'Saldo', 'Acción'].map(h => (
                       <th key={h} scope="col" className={`px-5 py-3 text-xs font-medium font-dm ${h === 'Saldo' ? 'text-right' : 'text-left'}`}
                         style={{ color: 'var(--color-text-secondary)' }}>
                         {h}
@@ -315,7 +323,7 @@ export default function Dashboard() {
                   <tbody>
                     <tr>
                       <td colSpan={4} className="px-5 py-10 text-center text-sm font-dm" style={{ color: 'var(--color-text-secondary)' }}>
-                        No hay socios en riesgo alto
+                        No hay {config.terminos.socios} en riesgo alto
                       </td>
                     </tr>
                   </tbody>
@@ -426,7 +434,7 @@ export default function Dashboard() {
                 onMouseOver={e => { e.currentTarget.style.color = 'var(--color-accent)'; e.currentTarget.style.borderColor = 'var(--color-accent)' }}
                 onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
               >
-                Ver socios →
+                Ver {config.terminos.socios} →
               </button>
             </div>
             <div className="grid grid-cols-2 gap-0 divide-x" style={{ borderColor: 'var(--color-border)' }}>
@@ -478,7 +486,7 @@ export default function Dashboard() {
                       Total: ${(promesasResumen.monto_vencido || 0).toLocaleString('es-CO')} COP
                     </p>
                     <p className="font-dm text-xs mt-3" style={{ color: '#555' }}>
-                      Estos socios prometieron pagar pero no cumplieron. Considera escalar la gestión.
+                      Estos {config.terminos.socios} prometieron pagar pero no cumplieron. Considera escalar la gestión.
                     </p>
                   </>
                 )}

@@ -2,6 +2,7 @@ import { useState, useEffect, useId } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ArrowRight, Loader2, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { useClient, CLIENT_CONFIGS } from '../context/ClientContext'
 import Logo from '../components/Logo'
 
 /* Validación inline sin alert() del browser */
@@ -23,6 +24,7 @@ function validate(form) {
 export default function Login() {
   const navigate = useNavigate()
   const { login, cargando, autenticado } = useAuth()
+  const { clientTipo, cambiarCliente, config } = useClient()
   const [form, setForm] = useState({ email: '', password: '' })
   const [errs, setErrs] = useState({})
   const [apiError, setApiError] = useState(null)
@@ -75,7 +77,7 @@ export default function Login() {
         <div className="relative z-10 text-center">
           <Logo size="lg" />
           <p className="text-base mt-4 font-dm leading-relaxed max-w-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            Gestión inteligente de cartera vencida para cooperativas financieras
+            {config.emoji} Solución de IA para {config.entidad}s — predicción de mora con 94% de precisión
           </p>
           <div className="mt-12 space-y-5 text-left">
             {[
@@ -205,9 +207,44 @@ export default function Login() {
             </button>
           </form>
 
+          {/* Selector de tipo de cliente — Modo Demo */}
+          <div
+            className="mt-6 p-4 font-dm"
+            style={{
+              background: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 8,
+            }}
+            aria-label="Selector de modo demo"
+          >
+            <p className="text-xs mb-3 font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+              🎯 Demo personalizada — ¿qué tipo de institución eres?
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.values(CLIENT_CONFIGS).map(cfg => (
+                <button
+                  key={cfg.tipo}
+                  type="button"
+                  onClick={() => cambiarCliente(cfg.tipo)}
+                  className="text-left px-3 py-2 rounded transition-all text-xs font-dm"
+                  style={{
+                    background: clientTipo === cfg.tipo ? 'rgba(0,255,106,0.12)' : 'transparent',
+                    border: clientTipo === cfg.tipo ? '1px solid var(--color-accent)' : '1px solid var(--color-border)',
+                    color: clientTipo === cfg.tipo ? 'var(--color-accent)' : 'var(--color-text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                  aria-pressed={clientTipo === cfg.tipo}
+                >
+                  <span className="mr-1">{cfg.emoji}</span>
+                  {cfg.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Credenciales demo */}
           <div
-            className="mt-8 p-4 font-dm"
+            className="mt-4 p-4 font-dm"
             style={{
               background: 'var(--color-surface)',
               border: '1px solid var(--color-border)',

@@ -3,6 +3,7 @@ import { Brain, Loader2, AlertTriangle, CheckCircle, TrendingUp, Download } from
 import RiskBadge from '../components/RiskBadge'
 import { useToast } from '../context/ToastContext'
 import api from '../api/client'
+import { useClient } from '../context/ClientContext'
 
 /* Demo: socio AL DÍA pero con señales conductuales de alto riesgo.
    dias_mora = 0 demuestra predicción real, no reacción a mora existente. */
@@ -13,6 +14,8 @@ const FORM_DEMO = {
 
 export default function Prediccion() {
   const toast = useToast()
+  const { config } = useClient()
+  const t = config.terminos
   const [form, setForm] = useState(FORM_DEMO)
   const [resultado, setResultado] = useState(null)
   const [cargando, setCargando] = useState(false)
@@ -100,19 +103,19 @@ export default function Prediccion() {
       {/* Texto explicativo */}
       <div className="mb-6 px-4 py-3 rounded-lg text-sm font-dm" style={{ background: 'rgba(0,229,160,0.04)', border: '1px solid rgba(0,229,160,0.12)', color: '#888' }}>
         <span className="text-[#F0F0EB] font-medium">¿Cómo funciona?</span>{' '}
-        El modelo analiza el comportamiento crediticio del socio — historial de pagos, deuda acumulada, antigüedad — y predice la probabilidad de incumplimiento en los próximos 60 días,{' '}
-        <span className="text-[#00E5A0]">incluso cuando el socio está al día</span>. Así puedes intervenir antes de que ocurra la mora.
+        El modelo analiza el comportamiento crediticio del {t.socio} — historial de pagos, deuda acumulada, antigüedad — y predice la probabilidad de incumplimiento en los próximos 60 días,{' '}
+        <span className="text-[#00E5A0]">incluso cuando el {t.socio} está al día</span>. Así puedes intervenir antes de que ocurra la {t.mora}.
       </div>
 
       <div className="grid grid-cols-2 gap-8">
         {/* Formulario */}
         <div className="card">
           <h2 className="font-syne font-semibold text-[#F0F0EB] mb-1">Calcular score manual</h2>
-          <p className="text-[#555] text-xs font-dm mb-5">Ingresa los datos del socio para predecir su riesgo</p>
+          <p className="text-[#555] text-xs font-dm mb-5">Ingresa los datos del {t.socio} para predecir su riesgo</p>
 
           <div className="mb-4 px-4 py-3 rounded-r-md text-xs font-dm" style={{ borderLeft: '3px solid #00E5A0', background: 'rgba(0,229,160,0.04)', color: '#888' }}>
             <span className="font-semibold" style={{ color: '#00E5A0' }}>Demo predictivo:</span>{' '}
-            este socio tiene <strong style={{ color: 'var(--color-text-primary)' }}>0 días de mora</strong> — está al día. El modelo detecta señales conductuales de riesgo futuro.
+            este {t.socio} tiene <strong style={{ color: 'var(--color-text-primary)' }}>0 días de {t.mora}</strong> — está al día. El modelo detecta señales conductuales de riesgo futuro.
           </div>
 
           <form onSubmit={calcular} className="space-y-4">
@@ -260,7 +263,7 @@ export default function Prediccion() {
                 }`}>
                   <strong>Recomendación: </strong>
                   {resultado.nivel_riesgo === 'alto'
-                    ? 'Intervenir YA — este socio está al día HOY pero entrará en mora en ~38 días. Contactar y reestructurar antes de que ocurra.'
+                    ? `Intervenir YA — este ${t.socio} está al día HOY pero va a ${t.entrar_mora} en ~38 días. Contactar y reestructurar antes de que ocurra.`
                     : resultado.nivel_riesgo === 'medio'
                     ? 'Monitorear de cerca. Enviar recordatorio preventivo de pago en los próximos 15 días.'
                     : 'Perfil saludable. Mantener seguimiento periódico estándar.'}
