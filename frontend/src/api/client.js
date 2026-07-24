@@ -1,7 +1,14 @@
 import axios from 'axios'
 
+// En dev, Vite hace proxy de /api al backend local (ver vite.config.js).
+// En producción, frontend y backend viven en dominios distintos (p.ej. Render),
+// así que VITE_API_URL debe apuntar a la URL completa del backend desplegado.
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`
+  : '/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE,
   headers: { 'Content-Type': 'application/json' },
 })
 

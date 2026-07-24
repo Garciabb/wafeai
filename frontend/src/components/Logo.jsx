@@ -27,7 +27,7 @@ export default function Logo({ size = 'md' }) {
       {/* Wordmark */}
       <span className={`font-syne font-bold ${textClass} tracking-tight leading-none`}>
         <span className="text-[#F0F0EB]">WAFE</span>
-        <span className="text-[#00E5A0]">AI</span>
+        <span className="text-[#00FF6A]">AI</span>
       </span>
     </div>
   )

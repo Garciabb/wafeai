@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
 import api from '../api/client'
 
-export function useAuth() {
+const AuthContext = createContext(null)
+
+export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(() => {
     try {
       const saved = localStorage.getItem('wafeai_usuario')
@@ -52,5 +54,15 @@ export function useAuth() {
     })
   }, [])
 
-  return { usuario, login, logout, actualizarUsuario, cargando, error, autenticado: !!usuario }
+  return (
+    <AuthContext.Provider value={{ usuario, login, logout, actualizarUsuario, cargando, error, autenticado: !!usuario }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider')
+  return ctx
 }

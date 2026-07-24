@@ -1,10 +1,10 @@
 import { NavLink, Link } from 'react-router-dom'
-import { LayoutDashboard, Users, Brain, MessageSquare, Bell, Calculator, LogOut, ChevronDown } from 'lucide-react'
+import { LayoutDashboard, Users, Brain, MessageSquare, Bell, Calculator, LogOut, ChevronDown, X } from 'lucide-react'
 import { useState } from 'react'
 import Logo from './Logo'
 import { useClient, CLIENT_CONFIGS } from '../context/ClientContext'
 
-export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
+export default function Sidebar({ usuario, onLogout, alertasCount = 0, open = false, onClose = () => {} }) {
   const { config, clientTipo, cambiarCliente } = useClient()
   const [showClientMenu, setShowClientMenu] = useState(false)
 
@@ -21,11 +21,30 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
   const nav = allNav.filter(n => config.modulos.includes(n.key))
 
   return (
-    <aside
-      className="w-64 h-screen flex flex-col fixed left-0 top-0 z-30"
-      style={{ background: '#0A0A0A', borderRight: '1px solid var(--color-border)' }}
-      aria-label="Navegación principal"
-    >
+    <>
+      {/* Overlay móvil — cierra el sidebar al tocar fuera */}
+      {open && (
+        <div
+          className="fixed inset-0 z-30 lg:hidden"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`w-64 h-screen flex flex-col fixed left-0 top-0 z-40 transition-transform duration-200 ease-out
+          ${open ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+        style={{ background: '#0A0A0A', borderRight: '1px solid var(--color-border)' }}
+        aria-label="Navegación principal"
+      >
+        <button
+          onClick={onClose}
+          className="lg:hidden absolute top-4 right-4 p-1"
+          style={{ color: '#555' }}
+          aria-label="Cerrar menú"
+        >
+          <X size={18} aria-hidden="true" />
+        </button>
       {/* Logo */}
       <div className="p-6" style={{ borderBottom: '1px solid var(--color-border)' }}>
         <Logo size="md" />
@@ -96,11 +115,12 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
             end={to === '/'}
             title={label}
             aria-current={undefined}
+            onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 text-sm font-dm font-medium
                transition-colors duration-150 rounded border-l-2
                ${isActive
-                 ? 'bg-[#00E5A0]/10 text-[#00E5A0] border-l-[#00E5A0]'
+                 ? 'bg-[#00FF6A]/10 text-[#00FF6A] border-l-[#00FF6A]'
                  : 'text-[#888] hover:text-[#F0F0EB] hover:bg-[#161616] border-l-transparent'
                }`
             }
@@ -134,13 +154,14 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
         >
           <Link
             to="/perfil"
+            onClick={onClose}
             className="flex items-center gap-3 flex-1 min-w-0 transition-opacity hover:opacity-80"
             aria-label="Ver perfil de usuario"
           >
             <div
               className="w-8 h-8 flex items-center justify-center text-sm font-bold font-syne flex-shrink-0"
               style={{
-                background: 'rgba(0,229,160,0.12)',
+                background: 'rgba(0,255,106,0.12)',
                 color: 'var(--color-accent)',
                 borderRadius: '50%',
               }}
@@ -173,6 +194,7 @@ export default function Sidebar({ usuario, onLogout, alertasCount = 0 }) {
           v1.0 MVP · {config.emoji} {config.label}
         </p>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }

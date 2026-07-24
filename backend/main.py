@@ -2,8 +2,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from database import Base, engine
-from routes import auth, dashboard, socios, prediccion, cobranza, alertas, promesas
+from database import Base, engine, SessionLocal
+from routes import auth, dashboard, socios, prediccion, cobranza, alertas, promesas, ia, historial
 from config import get_settings
 
 settings = get_settings()
@@ -12,6 +12,19 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+
+    # En hosts con disco efímero (p.ej. Render free tier) la BD se reinicia
+    # vacía en cada redeploy/spin-up. Si no hay socios, repuebla con la demo
+    # curada para que el enlace siempre funcione sin intervención manual.
+    from models.socio import Socio
+    db = SessionLocal()
+    try:
+        if db.query(Socio).count() == 0:
+            import seed
+            seed.main()
+    finally:
+        db.close()
+
     yield
 
 
@@ -61,6 +74,8 @@ app.include_router(prediccion.router)
 app.include_router(cobranza.router)
 app.include_router(alertas.router)
 app.include_router(promesas.router)
+app.include_router(ia.router)
+app.include_router(historial.router)
 
 
 @app.get("/", tags=["Health"])

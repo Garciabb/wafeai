@@ -63,7 +63,7 @@ export default function Simulador() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl font-bold font-syne flex items-center gap-3" style={{ color: 'var(--color-text-primary)' }}>
-          <Calculator size={20} className="text-[#00E5A0]" aria-hidden="true" />
+          <Calculator size={20} className="text-[#00FF6A]" aria-hidden="true" />
           ¿Cuánto te cuesta NO tener WafeAI?
         </h1>
         <p className="text-sm mt-1 font-dm" style={{ color: 'var(--color-text-secondary)' }}>
@@ -104,7 +104,7 @@ export default function Simulador() {
               type="range" min="100" max="50000" step="100"
               value={cartera}
               onChange={e => setCartera(Number(e.target.value))}
-              className="w-full accent-[#00E5A0]"
+              className="w-full accent-[#00FF6A]"
               aria-label="Slider cartera total"
             />
             <div className="flex justify-between text-xs font-dm mt-1" style={{ color: '#444' }}>
@@ -133,7 +133,7 @@ export default function Simulador() {
               type="range" min="0" max="30" step="0.1"
               value={tasaMora}
               onChange={e => setTasaMora(Number(e.target.value))}
-              className="w-full accent-[#00E5A0]"
+              className="w-full accent-[#00FF6A]"
             />
             <div className="flex justify-between text-xs font-dm mt-1" style={{ color: '#444' }}>
               <span>0%</span>
@@ -156,7 +156,7 @@ export default function Simulador() {
               type="range" min="10" max="100" step="5"
               value={interv}
               onChange={e => setInterv(Number(e.target.value))}
-              className="w-full accent-[#00E5A0]"
+              className="w-full accent-[#00FF6A]"
             />
             <div className="flex justify-between text-xs font-dm mt-1" style={{ color: '#444' }}>
               <span>10%</span><span>100%</span>
@@ -177,7 +177,7 @@ export default function Simulador() {
               type="range" min="10" max="95" step="5"
               value={recupero}
               onChange={e => setRecupero(Number(e.target.value))}
-              className="w-full accent-[#00E5A0]"
+              className="w-full accent-[#00FF6A]"
             />
             <div className="flex justify-between text-xs font-dm mt-1" style={{ color: '#444' }}>
               <span>10%</span><span>95%</span>
@@ -284,7 +284,7 @@ export default function Simulador() {
                 />
                 <Bar dataKey="valor" radius={[3, 3, 0, 0]}>
                   <Cell fill="#FF4455" />
-                  <Cell fill="#00E5A0" />
+                  <Cell fill="#00FF6A" />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -294,7 +294,7 @@ export default function Simulador() {
                 Sin WafeAI
               </span>
               <span className="flex items-center gap-2 text-xs font-dm" style={{ color: 'var(--color-text-secondary)' }}>
-                <span className="w-3 h-2 rounded-sm inline-block" style={{ background: '#00E5A0' }} aria-hidden="true" />
+                <span className="w-3 h-2 rounded-sm inline-block" style={{ background: '#00FF6A' }} aria-hidden="true" />
                 Con WafeAI
               </span>
             </div>

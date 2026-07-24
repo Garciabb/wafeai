@@ -38,7 +38,7 @@ class SocioUpdate(BaseModel):
 
 
 def _socio_dict(s: Socio, db: Session) -> dict:
-    credito = s.creditos.filter(Credito.estado == EstadoCredito.activo).first()
+    credito = s.creditos.filter(Credito.estado == EstadoCredito.activo).order_by(Credito.saldo_pendiente.desc()).first()
     return {
         "id": s.id,
         "cedula": s.cedula,

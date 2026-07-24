@@ -17,11 +17,11 @@ function ProgresoEnvio({ total, actual, finalizado }) {
         <p className="text-[#F0F0EB] text-sm font-dm">
           {finalizado ? 'Envio completado' : `Enviando ${actual} de ${total}...`}
         </p>
-        <span className="text-[#00E5A0] text-sm font-syne font-bold">{pct}%</span>
+        <span className="text-[#00FF6A] text-sm font-syne font-bold">{pct}%</span>
       </div>
       <div className="h-2.5 bg-[#1A1A1A] rounded-full overflow-hidden">
         <div
-          className="h-full bg-[#00E5A0] rounded-full transition-all duration-300 ease-out"
+          className="h-full bg-[#00FF6A] rounded-full transition-all duration-300 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -186,7 +186,7 @@ export default function Cobranza() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl font-bold font-syne flex items-center gap-3" style={{ color: 'var(--color-text-primary)' }}>
-          <Zap size={20} className="text-[#00E5A0]" aria-hidden="true" /> Cobranza Automatizada
+          <Zap size={20} className="text-[#00FF6A]" aria-hidden="true" /> Cobranza Automatizada
         </h1>
         <p className="font-dm text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Email y WhatsApp para socios en riesgo</p>
       </div>
@@ -199,7 +199,7 @@ export default function Cobranza() {
         ].map(({ id, label, icono: Icono }) => (
           <button key={id} onClick={() => setTab(id)}
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-dm transition-all ${
-              tab === id ? 'bg-[#00E5A0]/10 text-[#00E5A0] border border-[#00E5A0]/20' : 'text-[#555] hover:text-[#888]'
+              tab === id ? 'bg-[#00FF6A]/10 text-[#00FF6A] border border-[#00FF6A]/20' : 'text-[#555] hover:text-[#888]'
             }`}>
             <Icono size={14} />{label}
           </button>
@@ -234,7 +234,7 @@ export default function Cobranza() {
                     <button key={v} onClick={() => setCampana(p => ({ ...p, tipo_mensaje: v }))}
                       className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border text-xs font-dm transition-all ${
                         campana.tipo_mensaje === v
-                          ? 'border-[#00E5A0] bg-[#00E5A0]/10 text-[#00E5A0]'
+                          ? 'border-[#00FF6A] bg-[#00FF6A]/10 text-[#00FF6A]'
                           : 'border-[#222] text-[#555] hover:border-[#333]'
                       }`}>
                       <Ic size={16} />{l}
@@ -250,10 +250,10 @@ export default function Cobranza() {
                     <div key={p.id} onClick={() => setCampana(c => ({ ...c, plantilla: p.id }))}
                       className={`p-3 rounded-lg border mb-2 cursor-pointer transition-all ${
                         campana.plantilla === p.id
-                          ? 'border-[#00E5A0]/40 bg-[#00E5A0]/5'
+                          ? 'border-[#00FF6A]/40 bg-[#00FF6A]/5'
                           : 'border-[#1A1A1A] hover:border-[#222]'
                       }`}>
-                      <p className={`text-sm font-medium font-dm ${campana.plantilla === p.id ? 'text-[#00E5A0]' : 'text-[#F0F0EB]'}`}>{p.label}</p>
+                      <p className={`text-sm font-medium font-dm ${campana.plantilla === p.id ? 'text-[#00FF6A]' : 'text-[#F0F0EB]'}`}>{p.label}</p>
                       <p className="text-xs text-[#555] font-dm mt-0.5">{p.desc}</p>
                     </div>
                   ))}
@@ -284,7 +284,7 @@ export default function Cobranza() {
                 <h2 className="font-syne font-semibold text-[#F0F0EB] mb-1">Vista previa</h2>
                 <p className="text-[#555] text-xs font-dm mb-4">
                   Se enviaran mensajes a{' '}
-                  <span className="text-[#00E5A0] font-semibold">{preview.socios_afectados}</span>{' '}
+                  <span className="text-[#00FF6A] font-semibold">{preview.socios_afectados}</span>{' '}
                   socios con riesgo <strong className="text-[#F0F0EB]">{campana.nivel_riesgo}</strong>
                 </p>
                 <div className="space-y-1 max-h-44 overflow-y-auto mb-4 pr-1">
@@ -311,7 +311,7 @@ export default function Cobranza() {
                 <div className="mt-6 space-y-2">
                   {Array.from({ length: Math.min(enviados, 5) }).map((_, i) => (
                     <div key={i} className="flex items-center gap-2 text-xs font-dm text-[#555] animate-fade-in">
-                      <CheckCircle size={11} className="text-[#00E5A0] flex-shrink-0" />
+                      <CheckCircle size={11} className="text-[#00FF6A] flex-shrink-0" />
                       <span>Enviando mensaje {i + 1}...</span>
                     </div>
                   ))}
@@ -323,22 +323,22 @@ export default function Cobranza() {
             {faseCampana === 'listo' && (
               <div className="animate-slide-up">
                 <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle size={20} className="text-[#00E5A0]" />
+                  <CheckCircle size={20} className="text-[#00FF6A]" />
                   <h2 className="font-syne font-semibold text-[#F0F0EB]">
                     Campana completada
                   </h2>
                 </div>
 
-                <div className="bg-[#00E5A0]/10 border border-[#00E5A0]/20 rounded-xl p-5 mb-4 text-center">
-                  <p className="text-5xl font-bold font-syne text-[#00E5A0] mb-1">{totalCampana}</p>
+                <div className="bg-[#00FF6A]/10 border border-[#00FF6A]/20 rounded-xl p-5 mb-4 text-center">
+                  <p className="text-5xl font-bold font-syne text-[#00FF6A] mb-1">{totalCampana}</p>
                   <p className="text-sm text-[#888] font-dm">mensajes enviados exitosamente</p>
                 </div>
 
                 <div className="h-2 bg-[#1A1A1A] rounded-full overflow-hidden mb-4">
-                  <div className="h-full bg-[#00E5A0] rounded-full w-full" />
+                  <div className="h-full bg-[#00FF6A] rounded-full w-full" />
                 </div>
 
-                <p className="text-[#00E5A0] text-xs font-dm text-center mb-4">
+                <p className="text-[#00FF6A] text-xs font-dm text-center mb-4">
                   Campaña enviada exitosamente.
                 </p>
 
@@ -398,8 +398,8 @@ export default function Cobranza() {
                       <span
                         className="text-xs px-2 py-0.5 flex-shrink-0"
                         style={{
-                          background: s.nivel_riesgo === 'alto' ? 'rgba(255,68,85,0.1)' : s.nivel_riesgo === 'medio' ? 'rgba(255,184,0,0.1)' : 'rgba(0,229,160,0.1)',
-                          color: s.nivel_riesgo === 'alto' ? '#FF6B7A' : s.nivel_riesgo === 'medio' ? '#FFB800' : '#00E5A0',
+                          background: s.nivel_riesgo === 'alto' ? 'rgba(255,68,85,0.1)' : s.nivel_riesgo === 'medio' ? 'rgba(255,184,0,0.1)' : 'rgba(0,255,106,0.1)',
+                          color: s.nivel_riesgo === 'alto' ? '#FF6B7A' : s.nivel_riesgo === 'medio' ? '#FFB800' : '#00FF6A',
                           borderRadius: 4,
                         }}
                       >
@@ -412,7 +412,7 @@ export default function Cobranza() {
             </div>
 
             {socioSeleccionado && (
-              <div className="flex items-center justify-between mt-3 px-3 py-2.5 rounded-lg" style={{ background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.15)' }}>
+              <div className="flex items-center justify-between mt-3 px-3 py-2.5 rounded-lg" style={{ background: 'rgba(0,255,106,0.06)', border: '1px solid rgba(0,255,106,0.15)' }}>
                 <div>
                   <p className="text-sm font-dm font-medium" style={{ color: '#F0F0EB' }}>{socioSeleccionado.nombre_completo || socioSeleccionado.nombre}</p>
                   <p className="text-xs font-dm" style={{ color: '#555' }}>ID: {socioSeleccionado.id}</p>
@@ -435,7 +435,7 @@ export default function Cobranza() {
             {/* Email individual */}
             <div className="card">
               <h2 className="font-syne font-semibold text-[#F0F0EB] mb-4 flex items-center gap-2">
-                <Mail size={16} className="text-[#00E5A0]" /> Enviar Email
+                <Mail size={16} className="text-[#00FF6A]" /> Enviar Email
               </h2>
               <form onSubmit={enviarEmail} className="space-y-4">
                 <div>
@@ -453,7 +453,7 @@ export default function Cobranza() {
                 {emailRes && (
                   <div className={`p-3 rounded-lg border text-xs font-dm flex items-center gap-2 ${
                     emailRes.enviado
-                      ? 'bg-[#00E5A0]/10 border-[#00E5A0]/20 text-[#00E5A0]'
+                      ? 'bg-[#00FF6A]/10 border-[#00FF6A]/20 text-[#00FF6A]'
                       : 'bg-red-500/10 border-red-500/20 text-red-400'
                   }`}>
                     {emailRes.enviado ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}
@@ -468,7 +468,7 @@ export default function Cobranza() {
             {/* WhatsApp individual */}
             <div className="card">
               <h2 className="font-syne font-semibold text-[#F0F0EB] mb-4 flex items-center gap-2">
-                <MessageSquare size={16} className="text-[#00E5A0]" /> Enviar WhatsApp
+                <MessageSquare size={16} className="text-[#00FF6A]" /> Enviar WhatsApp
               </h2>
               <form onSubmit={enviarWA} className="space-y-4">
                 <div>
@@ -486,7 +486,7 @@ export default function Cobranza() {
                 {waRes && (
                   <div className={`p-3 rounded-lg border text-xs font-dm flex items-center gap-2 ${
                     waRes.enviado
-                      ? 'bg-[#00E5A0]/10 border-[#00E5A0]/20 text-[#00E5A0]'
+                      ? 'bg-[#00FF6A]/10 border-[#00FF6A]/20 text-[#00FF6A]'
                       : 'bg-red-500/10 border-red-500/20 text-red-400'
                   }`}>
                     {waRes.enviado ? <CheckCircle size={13} /> : <AlertTriangle size={13} />}

@@ -92,7 +92,7 @@ def listar_alertas(
 
     result = []
     for a in alertas:
-        cred = a.socio.creditos.filter(Credito.estado == EstadoCredito.activo).first() if a.socio else None
+        cred = a.socio.creditos.filter(Credito.estado == EstadoCredito.activo).order_by(Credito.saldo_pendiente.desc()).first() if a.socio else None
         result.append({
             "id": a.id,
             "tipo": a.tipo,

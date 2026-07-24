@@ -9,7 +9,7 @@ import { useClient } from '../context/ClientContext'
 const PRIORIDAD_CONFIG = {
   urgente: { cls: 'text-[#FF6B7A] bg-[#FF4455]/10 border-[#FF4455]/20', icono: AlertTriangle, label: 'Urgente' },
   media:   { cls: 'text-[#FFB800] bg-[#FFB800]/10 border-[#FFB800]/20',  icono: Zap,           label: 'Media' },
-  baja:    { cls: 'text-[#00E5A0] bg-[#00E5A0]/10 border-[#00E5A0]/20',  icono: Info,          label: 'Baja' },
+  baja:    { cls: 'text-[#00FF6A] bg-[#00FF6A]/10 border-[#00FF6A]/20',  icono: Info,          label: 'Baja' },
 }
 
 const TIPO_LABEL = {
@@ -146,7 +146,7 @@ export default function Alertas() {
               onClick={() => llamar(a)}
               className="flex items-center gap-1 text-xs px-2 py-1 font-dm transition-colors"
               style={{ border: '1px solid var(--color-border)', borderRadius: 4, color: 'var(--color-text-secondary)', background: 'transparent' }}
-              onMouseOver={e => { e.currentTarget.style.color = '#00E5A0'; e.currentTarget.style.borderColor = '#00E5A0' }}
+              onMouseOver={e => { e.currentTarget.style.color = '#00FF6A'; e.currentTarget.style.borderColor = '#00FF6A' }}
               onMouseOut={e => { e.currentTarget.style.color = 'var(--color-text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-border)' }}
               aria-label={`Llamar a ${a.socio}`}
             >
@@ -245,7 +245,7 @@ export default function Alertas() {
           style={{
             border: `1px solid ${soloNoLeidas ? 'var(--color-accent)' : 'var(--color-border)'}`,
             color: soloNoLeidas ? 'var(--color-accent)' : 'var(--color-text-secondary)',
-            background: soloNoLeidas ? 'rgba(0,229,160,0.08)' : 'transparent',
+            background: soloNoLeidas ? 'rgba(0,255,106,0.08)' : 'transparent',
             borderRadius: 4,
           }}
           aria-pressed={soloNoLeidas}
@@ -265,7 +265,7 @@ export default function Alertas() {
                 color: active
                   ? p === 'urgente' ? '#FF6B7A' : p === 'media' ? '#FFB800' : 'var(--color-accent)'
                   : 'var(--color-text-secondary)',
-                background: active ? (p === 'urgente' ? 'rgba(255,68,85,0.08)' : p === 'media' ? 'rgba(255,184,0,0.08)' : 'rgba(0,229,160,0.08)') : 'transparent',
+                background: active ? (p === 'urgente' ? 'rgba(255,68,85,0.08)' : p === 'media' ? 'rgba(255,184,0,0.08)' : 'rgba(0,255,106,0.08)') : 'transparent',
                 borderRadius: 4,
               }}
               aria-pressed={active}
@@ -307,7 +307,7 @@ export default function Alertas() {
                 : (gruposPrioridad[p] || [])
               if (grupo.length === 0) return null
               const { label } = PRIORIDAD_CONFIG[p]
-              const colorHeader = p === 'urgente' ? '#FF6B7A' : p === 'media' ? '#FFB800' : '#00E5A0'
+              const colorHeader = p === 'urgente' ? '#FF6B7A' : p === 'media' ? '#FFB800' : '#00FF6A'
               return (
                 <div key={p}>
                   <div className="flex items-center gap-3 mb-3">

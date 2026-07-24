@@ -2,7 +2,7 @@ export default function RiskBadge({ nivel, score, showScore = false }) {
   const config = {
     alto:  { cls: 'badge-alto',  dot: '#FF4455', label: 'ALTO' },
     medio: { cls: 'badge-medio', dot: '#FFB800', label: 'MEDIO' },
-    bajo:  { cls: 'badge-bajo',  dot: '#00E5A0', label: 'BAJO' },
+    bajo:  { cls: 'badge-bajo',  dot: '#00FF6A', label: 'BAJO' },
   }
   const { cls, dot, label } = config[nivel] || config.bajo
 

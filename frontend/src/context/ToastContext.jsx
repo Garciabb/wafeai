@@ -11,7 +11,7 @@ const ICONS = {
 }
 
 const STYLES = {
-  success: { border: 'rgba(0,229,160,0.25)',  bg: 'rgba(0,229,160,0.08)',  icon: '#00E5A0' },
+  success: { border: 'rgba(0,255,106,0.25)',  bg: 'rgba(0,255,106,0.08)',  icon: '#00FF6A' },
   error:   { border: 'rgba(255,68,85,0.25)',  bg: 'rgba(255,68,85,0.08)',  icon: '#FF4455' },
   warning: { border: 'rgba(255,184,0,0.25)',  bg: 'rgba(255,184,0,0.08)',  icon: '#FFB800' },
   info:    { border: 'rgba(255,255,255,0.15)', bg: 'rgba(255,255,255,0.04)', icon: '#888888' },

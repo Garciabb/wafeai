@@ -1,7 +1,7 @@
 import { useState, useEffect, useId } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ArrowRight, Loader2, AlertTriangle } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../context/AuthContext'
 import { useClient, CLIENT_CONFIGS } from '../context/ClientContext'
 import Logo from '../components/Logo'
 

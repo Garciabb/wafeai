@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     WHATSAPP_PHONE_ID: str = ""
     WHATSAPP_API_VERSION: str = "v21.0"
 
+    ANTHROPIC_API_KEY: str = ""
+
     FRONTEND_URL: str = "http://localhost:5173"
 
     class Config:

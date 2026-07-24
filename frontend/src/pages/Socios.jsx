@@ -4,7 +4,7 @@ import {
   Search, Plus, Upload, Download, ChevronLeft, ChevronRight,
   Brain, X, Loader2, CheckCircle, AlertTriangle, MessageSquare,
   ArrowLeft, Phone, Mail, Send, User, Paperclip, Bold, Italic, Underline, Pencil, Save,
-  CalendarCheck, Check, Trash2, Clock,
+  CalendarCheck, Check, Trash2, Clock, History, Sparkles,
 } from 'lucide-react'
 import RiskBadge from '../components/RiskBadge'
 import { SkeletonTable } from '../components/Skeleton'
@@ -21,11 +21,11 @@ const fmt = (n) => {
   return `$${n}`
 }
 
-const NIVEL_COLOR = { alto: '#FF4455', medio: '#FFB800', bajo: '#00E5A0' }
+const NIVEL_COLOR = { alto: '#FF4455', medio: '#FFB800', bajo: '#00FF6A' }
 
 /* Badge pills para estado mora */
 const MORA_BADGE = {
-  al_dia:          { label: 'Al día',          bg: 'rgba(0,229,160,0.1)',  border: 'rgba(0,229,160,0.2)',  color: '#00E5A0' },
+  al_dia:          { label: 'Al día',          bg: 'rgba(0,255,106,0.1)',  border: 'rgba(0,255,106,0.2)',  color: '#00FF6A' },
   mora_temprana:   { label: 'Mora temprana',   bg: 'rgba(255,184,0,0.1)',  border: 'rgba(255,184,0,0.2)',  color: '#FFB800' },
   mora_avanzada:   { label: 'Mora avanzada',   bg: 'rgba(255,68,85,0.1)',  border: 'rgba(255,68,85,0.2)',  color: '#FF4455' },
   cartera_vencida: { label: 'Cartera vencida', bg: 'rgba(255,68,85,0.15)', border: 'rgba(255,68,85,0.3)',  color: '#FF4455' },
@@ -35,7 +35,7 @@ const MORA_BADGE = {
 const ACCION_BADGE = {
   alto:  { texto: 'Urgente ⚡', color: '#FF4455', bg: 'rgba(255,68,85,0.08)',  border: 'rgba(255,68,85,0.2)' },
   medio: { texto: 'Monitorear', color: '#FFB800', bg: 'rgba(255,184,0,0.08)',  border: 'rgba(255,184,0,0.2)' },
-  bajo:  { texto: 'Al día ✓',  color: '#00E5A0', bg: 'rgba(0,229,160,0.08)', border: 'rgba(0,229,160,0.2)' },
+  bajo:  { texto: 'Al día ✓',  color: '#00FF6A', bg: 'rgba(0,255,106,0.08)', border: 'rgba(0,255,106,0.2)' },
 }
 
 const CSV_PLANTILLA = 'nombre,cedula,email,telefono,ciudad,tipo_credito,monto,dias_mora,historial_pagos\n' +
@@ -45,6 +45,15 @@ const CSV_PLANTILLA = 'nombre,cedula,email,telefono,ciudad,tipo_credito,monto,di
 const MORA_LABEL = {
   al_dia: 'Al día', mora_temprana: 'Mora temprana',
   mora_avanzada: 'Mora avanzada', cartera_vencida: 'Cartera vencida',
+}
+
+/* Tipos de evento del Historial de Contexto */
+const EVENTO_TIPOS = {
+  pago:           { label: 'Pago',            color: '#00FF6A' },
+  incumplimiento: { label: 'Incumplimiento',  color: '#FF4455' },
+  promesa_pago:   { label: 'Promesa de pago', color: '#FFB800' },
+  contacto:       { label: 'Contacto',        color: '#8A8F98' },
+  novedad:        { label: 'Novedad',         color: '#5B8DEF' },
 }
 
 /* ══════════════════════════════════════════════
@@ -111,16 +120,16 @@ function ModalNuevoSocio({ onClose, onCreado }) {
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4" noValidate>
           <div>
-            <label className="block text-xs text-[#888] font-dm mb-1.5">Nombre completo <span className="text-[#00E5A0]">*</span></label>
+            <label className="block text-xs text-[#888] font-dm mb-1.5">Nombre completo <span className="text-[#00FF6A]">*</span></label>
             <input className="input text-sm" placeholder="Carlos Andrés Martínez López" required value={form.nombre} onChange={e => set('nombre', e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-[#888] font-dm mb-1.5">Cédula <span className="text-[#00E5A0]">*</span></label>
+              <label className="block text-xs text-[#888] font-dm mb-1.5">Cédula <span className="text-[#00FF6A]">*</span></label>
               <input className="input text-sm" placeholder="1234567890" required value={form.cedula} onChange={e => set('cedula', e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs text-[#888] font-dm mb-1.5">Email <span className="text-[#00E5A0]">*</span></label>
+              <label className="block text-xs text-[#888] font-dm mb-1.5">Email <span className="text-[#00FF6A]">*</span></label>
               <input type="email" className="input text-sm" placeholder="correo@ejemplo.co" required value={form.email} onChange={e => set('email', e.target.value)} />
             </div>
             <div>
@@ -218,10 +227,10 @@ function ModalImportarCSV({ onClose, onImportado }) {
           )}
         </div>
         <div className="p-6 space-y-5">
-          <button onClick={descargarPlantilla} className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-[#00E5A0]/30 bg-[#00E5A0]/5 hover:border-[#00E5A0]/60 transition-colors text-left">
-            <Download size={16} className="text-[#00E5A0] flex-shrink-0" />
+          <button onClick={descargarPlantilla} className="w-full flex items-center gap-3 p-3 rounded-lg border border-dashed border-[#00FF6A]/30 bg-[#00FF6A]/5 hover:border-[#00FF6A]/60 transition-colors text-left">
+            <Download size={16} className="text-[#00FF6A] flex-shrink-0" />
             <div>
-              <p className="text-[#00E5A0] text-xs font-dm font-medium">Descargar plantilla CSV</p>
+              <p className="text-[#00FF6A] text-xs font-dm font-medium">Descargar plantilla CSV</p>
               <p className="text-[#555] text-xs font-dm">Formato exacto requerido</p>
             </div>
           </button>
@@ -236,8 +245,8 @@ function ModalImportarCSV({ onClose, onImportado }) {
           {estado === 'idle' && (
             <>
               <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFile} />
-              <button onClick={() => fileRef.current?.click()} className={`w-full p-6 rounded-xl border-2 border-dashed transition-all text-center ${archivo ? 'border-[#00E5A0]/60 bg-[#00E5A0]/5' : 'border-[#222] hover:border-[#333]'}`}>
-                {archivo ? (<><CheckCircle size={24} className="text-[#00E5A0] mx-auto mb-2" /><p className="text-[#F0F0EB] text-sm font-dm font-medium">{archivo.name}</p><p className="text-[#555] text-xs font-dm mt-1">{(archivo.size / 1024).toFixed(1)} KB — clic para cambiar</p></>) : (<><Upload size={24} className="text-[#555] mx-auto mb-2" /><p className="text-[#888] text-sm font-dm">Clic para seleccionar archivo .csv</p></>)}
+              <button onClick={() => fileRef.current?.click()} className={`w-full p-6 rounded-xl border-2 border-dashed transition-all text-center ${archivo ? 'border-[#00FF6A]/60 bg-[#00FF6A]/5' : 'border-[#222] hover:border-[#333]'}`}>
+                {archivo ? (<><CheckCircle size={24} className="text-[#00FF6A] mx-auto mb-2" /><p className="text-[#F0F0EB] text-sm font-dm font-medium">{archivo.name}</p><p className="text-[#555] text-xs font-dm mt-1">{(archivo.size / 1024).toFixed(1)} KB — clic para cambiar</p></>) : (<><Upload size={24} className="text-[#555] mx-auto mb-2" /><p className="text-[#888] text-sm font-dm">Clic para seleccionar archivo .csv</p></>)}
               </button>
               <div className="flex gap-3">
                 <button onClick={onClose} className="btn-ghost flex-1 text-sm py-2.5">Cancelar</button>
@@ -249,10 +258,10 @@ function ModalImportarCSV({ onClose, onImportado }) {
             <div className="py-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[#F0F0EB] text-sm font-dm">Importando socios...</p>
-                <span className="text-[#00E5A0] text-sm font-syne font-bold">{progreso}%</span>
+                <span className="text-[#00FF6A] text-sm font-syne font-bold">{progreso}%</span>
               </div>
               <div className="h-2 bg-[#1A1A1A] rounded-full overflow-hidden">
-                <div className="h-full bg-[#00E5A0] rounded-full transition-all duration-300" style={{ width: `${progreso}%` }} />
+                <div className="h-full bg-[#00FF6A] rounded-full transition-all duration-300" style={{ width: `${progreso}%` }} />
               </div>
               <p className="text-[#555] text-xs font-dm mt-2 text-center">No cierres esta ventana</p>
             </div>
@@ -260,7 +269,7 @@ function ModalImportarCSV({ onClose, onImportado }) {
           {estado === 'listo' && resultado && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#00E5A0]/10 border border-[#00E5A0]/20 rounded-xl p-4 text-center"><p className="text-3xl font-bold font-syne text-[#00E5A0]">{resultado.creados}</p><p className="text-xs text-[#888] font-dm mt-1">Importados</p></div>
+                <div className="bg-[#00FF6A]/10 border border-[#00FF6A]/20 rounded-xl p-4 text-center"><p className="text-3xl font-bold font-syne text-[#00FF6A]">{resultado.creados}</p><p className="text-xs text-[#888] font-dm mt-1">Importados</p></div>
                 <div className="bg-[#141414] border border-[#222] rounded-xl p-4 text-center"><p className="text-3xl font-bold font-syne text-[#555]">{resultado.omitidos}</p><p className="text-xs text-[#888] font-dm mt-1">Duplicados</p></div>
               </div>
               {resultado.errores?.length > 0 && (
@@ -326,11 +335,11 @@ function DrawerScoreIA({ socio, onClose }) {
 
   const score = detalle?.score_riesgo ?? socio.score_riesgo
   const nivel = detalle?.nivel_riesgo ?? socio.nivel_riesgo
-  const color = NIVEL_COLOR[nivel] || '#00E5A0'
+  const color = NIVEL_COLOR[nivel] || '#00FF6A'
   const recomendacion = {
     alto:  { texto: 'Contacto urgente', desc: 'Llamar al socio hoy. Iniciar proceso formal de cobranza.', color: '#EF4444' },
     medio: { texto: 'Monitorear', desc: 'Enviar recordatorio preventivo. Revisar en 15 días.', color: '#F59E0B' },
-    bajo:  { texto: 'Sin acción', desc: 'Perfil saludable. Seguimiento periódico estándar.', color: '#00E5A0' },
+    bajo:  { texto: 'Sin acción', desc: 'Perfil saludable. Seguimiento periódico estándar.', color: '#00FF6A' },
   }[nivel] || {}
 
   return (
@@ -348,7 +357,7 @@ function DrawerScoreIA({ socio, onClose }) {
         </div>
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {cargando ? (
-            <div className="flex items-center justify-center h-48"><Loader2 size={28} className="animate-spin text-[#00E5A0]" /></div>
+            <div className="flex items-center justify-center h-48"><Loader2 size={28} className="animate-spin text-[#00FF6A]" /></div>
           ) : (
             <>
               <div className="flex flex-col items-center">
@@ -386,7 +395,7 @@ function DrawerScoreIA({ socio, onClose }) {
                 ].map(({ label, val, accent }) => (
                   <div key={label} className="flex justify-between items-center py-2 border-b border-[#111]">
                     <span className="text-[#555] text-sm font-dm">{label}</span>
-                    <span className={`text-sm font-dm font-medium ${accent ? 'text-[#00E5A0]' : 'text-[#F0F0EB]'}`}>{val}</span>
+                    <span className={`text-sm font-dm font-medium ${accent ? 'text-[#00FF6A]' : 'text-[#F0F0EB]'}`}>{val}</span>
                   </div>
                 ))}
               </div>
@@ -400,7 +409,7 @@ function DrawerScoreIA({ socio, onClose }) {
         </div>
         <div className="p-6 border-t border-[#1A1A1A] space-y-3">
           {cobranzaEstado === 'enviado' && (
-            <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg text-xs font-dm" style={{ background: 'rgba(0,229,160,0.08)', border: '1px solid rgba(0,229,160,0.2)', color: '#00E5A0' }}>
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg text-xs font-dm" style={{ background: 'rgba(0,255,106,0.08)', border: '1px solid rgba(0,255,106,0.2)', color: '#00FF6A' }}>
               <CheckCircle size={14} className="flex-shrink-0 mt-0.5" /><span>Cobranza enviada a <strong>{socio.nombre_completo}</strong><br /><span style={{ color: '#888' }}>Canal: Email</span></span>
             </div>
           )}
@@ -417,12 +426,50 @@ function DrawerScoreIA({ socio, onClose }) {
 /* ══════════════════════════════════════════════
    CHAT WHATSAPP DEL SOCIO
 ══════════════════════════════════════════════ */
-function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlighted = false }) {
+function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlighted = false, historialEventos = [], perfilRiesgo = {} }) {
   const toast = useToast()
   const [modoIA, setModoIA] = useState(true)
   const [mensaje, setMensaje] = useState(mensajeInicial)
   const [historial, setHistorial] = useState([])
   const [sugerenciaSeleccionada, setSugerenciaSeleccionada] = useState(-1)
+
+  const [panelIAAbierto, setPanelIAAbierto] = useState(false)
+  const [cargandoSugerenciaIA, setCargandoSugerenciaIA] = useState(false)
+  const [sugerenciaIA, setSugerenciaIA] = useState('')
+  const [errorSugerenciaIA, setErrorSugerenciaIA] = useState(null)
+
+  const generarSugerenciaIA = async () => {
+    setPanelIAAbierto(true)
+    setCargandoSugerenciaIA(true)
+    setErrorSugerenciaIA(null)
+    try {
+      const { data } = await api.post('/generar-mensaje', {
+        socio_id: socio.id,
+        historial: historialEventos.map(ev => ({ fecha: ev.fecha, tipo: ev.tipo, descripcion: ev.descripcion })),
+        perfil: perfilRiesgo,
+      })
+      setSugerenciaIA(data.mensaje || '')
+    } catch (err) {
+      setErrorSugerenciaIA(err.response?.data?.detail || 'Error al generar la sugerencia')
+    } finally {
+      setCargandoSugerenciaIA(false)
+    }
+  }
+
+  const usarSugerenciaIA = () => {
+    setMensaje(sugerenciaIA)
+    setPanelIAAbierto(false)
+    if (textareaRef.current) { textareaRef.current.focus(); ajustarAltura(textareaRef.current) }
+  }
+
+  const copiarSugerenciaIA = async () => {
+    try {
+      await navigator.clipboard.writeText(sugerenciaIA)
+      toast.success('Mensaje copiado al portapapeles ✓')
+    } catch {
+      toast.error('No se pudo copiar el mensaje')
+    }
+  }
 
   useEffect(() => {
     try {
@@ -607,7 +654,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
         background: '#0F0F0F', border: '1px solid #1A1A1A', borderRadius: 10,
         display: 'flex', flexDirection: 'column',
         height: 'calc(100vh - 240px)', minHeight: 520, overflow: 'hidden',
-        boxShadow: highlighted ? '0 0 0 1.5px #00E5A0, 0 0 24px rgba(0,229,160,0.15)' : 'none',
+        boxShadow: highlighted ? '0 0 0 1.5px #00FF6A, 0 0 24px rgba(0,255,106,0.15)' : 'none',
         transition: 'box-shadow 300ms ease',
       }}
     >
@@ -616,7 +663,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
         <div className="flex items-center gap-3">
           <div
             className="flex-shrink-0 flex items-center justify-center font-syne font-bold"
-            style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,229,160,0.15)', color: '#00E5A0', fontSize: 12, border: '1px solid rgba(0,229,160,0.25)' }}
+            style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,255,106,0.15)', color: '#00FF6A', fontSize: 12, border: '1px solid rgba(0,255,106,0.25)' }}
             aria-hidden="true"
           >
             {inics}
@@ -625,7 +672,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
             <p className="font-dm font-semibold truncate" style={{ color: 'var(--color-text-primary)', fontSize: 13 }}>
               {socio.nombre_completo}
             </p>
-            <p className="font-dm" style={{ color: modoIA ? '#00E5A0' : '#555', fontSize: 10, marginTop: 1 }}>
+            <p className="font-dm" style={{ color: modoIA ? '#00FF6A' : '#555', fontSize: 10, marginTop: 1 }}>
               {modoIA ? '● Sugerencias activas' : '● Modo manual'}
             </p>
           </div>
@@ -639,7 +686,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
               onClick={() => setModoIA(m => !m)}
               style={{
                 position: 'relative', width: 40, height: 22, borderRadius: 11,
-                background: modoIA ? '#00E5A0' : '#333', border: 'none', cursor: 'pointer',
+                background: modoIA ? '#00FF6A' : '#333', border: 'none', cursor: 'pointer',
                 transition: 'background 0.2s ease', flexShrink: 0, padding: 0,
               }}
             >
@@ -649,7 +696,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                 transition: 'left 0.2s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
               }} />
             </button>
-            <span className="font-dm" style={{ fontSize: 11, color: modoIA ? '#00E5A0' : '#444' }}>IA</span>
+            <span className="font-dm" style={{ fontSize: 11, color: modoIA ? '#00FF6A' : '#444' }}>IA</span>
           </div>
         </div>
       </div>
@@ -684,7 +731,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
               <div
                 className="font-dm text-xs leading-relaxed"
                 style={{
-                  background: 'rgba(0,229,160,0.15)', border: '1px solid rgba(0,229,160,0.25)',
+                  background: 'rgba(0,255,106,0.15)', border: '1px solid rgba(0,255,106,0.25)',
                   borderRadius: '12px 12px 2px 12px', padding: '8px 12px',
                   color: 'var(--color-text-primary)',
                 }}
@@ -697,6 +744,86 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
             </div>
           </div>
         ))}
+      </div>
+
+      {/* ── Sugerencia WafeAI: mensaje generado con IA a partir del historial de contexto ── */}
+      <div style={{ borderTop: '1px solid #111', background: '#0A0A0A', flexShrink: 0, padding: '10px 12px' }}>
+        <button
+          onClick={generarSugerenciaIA}
+          disabled={cargandoSugerenciaIA}
+          className="w-full flex items-center justify-center gap-2 font-dm text-xs disabled:opacity-60"
+          style={{
+            background: 'rgba(91,141,239,0.08)', border: '1px solid rgba(91,141,239,0.25)',
+            borderRadius: 8, padding: '8px 12px', color: '#8AB4FF',
+            cursor: cargandoSugerenciaIA ? 'not-allowed' : 'pointer', transition: 'background 150ms ease',
+          }}
+        >
+          <Sparkles size={13} aria-hidden="true" /> Generar mensaje con WafeAI
+        </button>
+
+        {panelIAAbierto && (
+          <div className="mt-2 p-3" style={{ background: 'rgba(91,141,239,0.04)', border: '1px solid rgba(91,141,239,0.15)', borderRadius: 8 }}>
+            {cargandoSugerenciaIA ? (
+              <div className="flex items-center justify-center gap-2 py-4 font-dm" style={{ color: '#8AB4FF', fontSize: 12 }}>
+                <Loader2 size={15} className="animate-spin" aria-hidden="true" /> Generando mensaje con IA...
+              </div>
+            ) : errorSugerenciaIA ? (
+              <div className="flex items-center gap-2 py-1 font-dm text-xs" style={{ color: '#FF4455' }}>
+                <AlertTriangle size={12} aria-hidden="true" /> {errorSugerenciaIA}
+              </div>
+            ) : (
+              <>
+                <textarea
+                  value={sugerenciaIA}
+                  onChange={e => setSugerenciaIA(e.target.value)}
+                  rows={3}
+                  className="font-dm resize-none w-full"
+                  style={{
+                    background: '#0F0F0F', border: '1px solid #222', borderRadius: 6,
+                    padding: '6px 10px', fontSize: 12, color: '#F0F0EB', outline: 'none',
+                  }}
+                  aria-label="Mensaje sugerido por WafeAI (editable)"
+                />
+                <div className="flex justify-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setPanelIAAbierto(false)}
+                    className="font-dm"
+                    style={{ border: '1px solid #2A2A2A', borderRadius: 6, padding: '5px 12px', fontSize: 12, color: '#555', background: 'transparent', cursor: 'pointer' }}
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={copiarSugerenciaIA}
+                    disabled={!sugerenciaIA.trim()}
+                    className="flex items-center gap-1.5 font-dm disabled:opacity-40"
+                    style={{
+                      background: 'rgba(37,211,102,0.12)', border: '1px solid rgba(37,211,102,0.3)',
+                      borderRadius: 6, padding: '5px 12px', fontSize: 12, color: '#25D366',
+                      cursor: sugerenciaIA.trim() ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    <MessageSquare size={11} aria-hidden="true" /> Copiar para WhatsApp
+                  </button>
+                  <button
+                    type="button"
+                    onClick={usarSugerenciaIA}
+                    disabled={!sugerenciaIA.trim()}
+                    className="font-dm disabled:opacity-40"
+                    style={{
+                      background: 'rgba(0,255,106,0.12)', border: '1px solid rgba(0,255,106,0.3)',
+                      borderRadius: 6, padding: '5px 12px', fontSize: 12, color: '#00FF6A',
+                      cursor: sugerenciaIA.trim() ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    Usar mensaje
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Carrusel de sugerencias + form personalizado ── */}
@@ -724,7 +851,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                 aria-label="Anterior sugerencia"
                 style={{
                   flexShrink: 0, width: 30, height: 30, borderRadius: '50%',
-                  background: flechaPresionada === 'izq' ? 'rgba(0,229,160,0.1)' : '#1A1A1A',
+                  background: flechaPresionada === 'izq' ? 'rgba(0,255,106,0.1)' : '#1A1A1A',
                   border: '1px solid #2A2A2A',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#888', cursor: puedeScrollIzq ? 'pointer' : 'not-allowed',
@@ -732,7 +859,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                   transform: flechaPresionada === 'izq' ? 'scale(0.85)' : 'scale(1)',
                   transition: 'transform 120ms ease, background 120ms ease, opacity 150ms ease',
                 }}
-                onMouseOver={e => { if (puedeScrollIzq && flechaPresionada !== 'izq') { e.currentTarget.style.background = '#222'; e.currentTarget.style.borderColor = 'rgba(0,229,160,0.3)'; e.currentTarget.style.color = '#00E5A0' } }}
+                onMouseOver={e => { if (puedeScrollIzq && flechaPresionada !== 'izq') { e.currentTarget.style.background = '#222'; e.currentTarget.style.borderColor = 'rgba(0,255,106,0.3)'; e.currentTarget.style.color = '#00FF6A' } }}
                 onMouseOut={e => { if (flechaPresionada !== 'izq') { e.currentTarget.style.background = '#1A1A1A'; e.currentTarget.style.borderColor = '#2A2A2A'; e.currentTarget.style.color = '#888' } }}
               >
                 <ChevronLeft size={14} aria-hidden="true" />
@@ -775,20 +902,20 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                         className="font-dm text-left"
                         style={{
                           width: 200, flexShrink: 0, scrollSnapAlign: 'start',
-                          background: sel ? 'rgba(0,229,160,0.05)' : '#111',
-                          border: `1px solid ${sel ? '#00E5A0' : '#222'}`,
+                          background: sel ? 'rgba(0,255,106,0.05)' : '#111',
+                          border: `1px solid ${sel ? '#00FF6A' : '#222'}`,
                           borderRadius: 10, padding: '10px 12px',
                           cursor: 'pointer', position: 'relative',
                           transform: animando ? 'scale(1.03)' : 'scale(1)',
-                          boxShadow: animando ? '0 0 0 1.5px #00E5A0, 0 4px 20px rgba(0,229,160,0.12)' : 'none',
+                          boxShadow: animando ? '0 0 0 1.5px #00FF6A, 0 4px 20px rgba(0,255,106,0.12)' : 'none',
                           zIndex: animando ? 2 : 1,
                           transition: 'transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 250ms ease, border-color 150ms, background 150ms',
                         }}
-                        onMouseOver={e => { if (!sel) { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.5)'; e.currentTarget.style.background = 'rgba(0,229,160,0.05)' } }}
+                        onMouseOver={e => { if (!sel) { e.currentTarget.style.borderColor = 'rgba(0,255,106,0.5)'; e.currentTarget.style.background = 'rgba(0,255,106,0.05)' } }}
                         onMouseOut={e => { if (!sel) { e.currentTarget.style.borderColor = '#222'; e.currentTarget.style.background = '#111' } }}
                       >
                         {sel && (
-                          <span style={{ position: 'absolute', top: 6, right: 8, color: '#00E5A0', fontSize: 10, fontWeight: 700 }}>✓</span>
+                          <span style={{ position: 'absolute', top: 6, right: 8, color: '#00FF6A', fontSize: 10, fontWeight: 700 }}>✓</span>
                         )}
                         <div className="flex items-center" style={{ gap: 5, marginBottom: 5 }}>
                           <span style={{ fontSize: 13, lineHeight: 1 }}>{s.icono}</span>
@@ -801,7 +928,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                         }}>
                           {s.texto}
                         </p>
-                        <span className="font-dm" style={{ color: '#00E5A0', fontSize: 10 }}>Toca para usar →</span>
+                        <span className="font-dm" style={{ color: '#00FF6A', fontSize: 10 }}>Toca para usar →</span>
                       </button>
                     )
                   })}
@@ -815,7 +942,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                 aria-label="Siguiente sugerencia"
                 style={{
                   flexShrink: 0, width: 30, height: 30, borderRadius: '50%',
-                  background: flechaPresionada === 'der' ? 'rgba(0,229,160,0.1)' : '#1A1A1A',
+                  background: flechaPresionada === 'der' ? 'rgba(0,255,106,0.1)' : '#1A1A1A',
                   border: '1px solid #2A2A2A',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#888', cursor: puedeScrollDer ? 'pointer' : 'not-allowed',
@@ -823,7 +950,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                   transform: flechaPresionada === 'der' ? 'scale(0.85)' : 'scale(1)',
                   transition: 'transform 120ms ease, background 120ms ease, opacity 150ms ease',
                 }}
-                onMouseOver={e => { if (puedeScrollDer && flechaPresionada !== 'der') { e.currentTarget.style.background = '#222'; e.currentTarget.style.borderColor = 'rgba(0,229,160,0.3)'; e.currentTarget.style.color = '#00E5A0' } }}
+                onMouseOver={e => { if (puedeScrollDer && flechaPresionada !== 'der') { e.currentTarget.style.background = '#222'; e.currentTarget.style.borderColor = 'rgba(0,255,106,0.3)'; e.currentTarget.style.color = '#00FF6A' } }}
                 onMouseOut={e => { if (flechaPresionada !== 'der') { e.currentTarget.style.background = '#1A1A1A'; e.currentTarget.style.borderColor = '#2A2A2A'; e.currentTarget.style.color = '#888' } }}
               >
                 <ChevronRight size={14} aria-hidden="true" />
@@ -840,7 +967,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                     aria-label={`Ir a sugerencia ${i + 1}`}
                     style={{
                       width: i === dotActivo ? 16 : 6, height: 6, borderRadius: 3,
-                      background: i === dotActivo ? '#00E5A0' : '#2A2A2A',
+                      background: i === dotActivo ? '#00FF6A' : '#2A2A2A',
                       border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0,
                       transition: 'all 200ms ease',
                     }}
@@ -872,7 +999,7 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                 color: '#444', background: 'transparent', cursor: 'pointer',
                 textAlign: 'left', transition: 'border-color 150ms, color 150ms',
               }}
-              onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'; e.currentTarget.style.color = '#00E5A0' }}
+              onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,255,106,0.4)'; e.currentTarget.style.color = '#00FF6A' }}
               onMouseOut={e => { e.currentTarget.style.borderColor = '#2A2A2A'; e.currentTarget.style.color = '#444' }}
             >
               + Guardar mensaje personalizado
@@ -917,9 +1044,9 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
                 disabled={!formTexto.trim()}
                 className="font-dm disabled:opacity-40"
                 style={{
-                  background: 'rgba(0,229,160,0.12)', border: '1px solid rgba(0,229,160,0.3)',
+                  background: 'rgba(0,255,106,0.12)', border: '1px solid rgba(0,255,106,0.3)',
                   borderRadius: 6, padding: '5px 12px', fontSize: 12,
-                  color: '#00E5A0', cursor: formTexto.trim() ? 'pointer' : 'not-allowed',
+                  color: '#00FF6A', cursor: formTexto.trim() ? 'pointer' : 'not-allowed',
                 }}
               >
                 Guardar
@@ -1123,7 +1250,7 @@ function ModalCorreo({ socio, onClose, onEnviado }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #1A1A1A', flexShrink: 0 }}>
           <div className="flex items-center gap-3">
-            <Mail size={18} style={{ color: '#00E5A0' }} aria-hidden="true" />
+            <Mail size={18} style={{ color: '#00FF6A' }} aria-hidden="true" />
             <div>
               <h2 id="modal-correo-title" className="font-syne font-bold" style={{ color: 'var(--color-text-primary)', fontSize: 15 }}>
                 Nuevo correo de cobranza
@@ -1152,7 +1279,7 @@ function ModalCorreo({ socio, onClose, onEnviado }) {
               {socio.email ? (
                 <span
                   className="inline-flex items-center gap-1.5 font-dm text-xs px-2 py-1"
-                  style={{ background: 'rgba(0,229,160,0.08)', border: '1px solid rgba(0,229,160,0.2)', borderRadius: 4, color: '#00E5A0' }}
+                  style={{ background: 'rgba(0,255,106,0.08)', border: '1px solid rgba(0,255,106,0.2)', borderRadius: 4, color: '#00FF6A' }}
                 >
                   <User size={10} aria-hidden="true" /> {socio.email}
                 </span>
@@ -1196,10 +1323,10 @@ function ModalCorreo({ socio, onClose, onEnviado }) {
                   onClick={() => seleccionarPlantilla(i)}
                   className="font-dm text-xs px-3 py-1.5 flex-shrink-0 transition-all"
                   style={{
-                    background: plantillaIdx === i ? 'rgba(0,229,160,0.1)' : '#111',
-                    border: `1px solid ${plantillaIdx === i ? 'rgba(0,229,160,0.35)' : '#1A1A1A'}`,
+                    background: plantillaIdx === i ? 'rgba(0,255,106,0.1)' : '#111',
+                    border: `1px solid ${plantillaIdx === i ? 'rgba(0,255,106,0.35)' : '#1A1A1A'}`,
                     borderRadius: 6,
-                    color: plantillaIdx === i ? '#00E5A0' : '#888',
+                    color: plantillaIdx === i ? '#00FF6A' : '#888',
                   }}
                 >
                   {p.label}
@@ -1419,6 +1546,149 @@ function ModalEditarSocio({ socio, onClose, onGuardado }) {
 }
 
 /* ══════════════════════════════════════════════
+   HISTORIAL DE CONTEXTO — línea de tiempo de eventos del socio
+══════════════════════════════════════════════ */
+function HistorialContexto({ eventos, onAgregar, onEliminar }) {
+  const toast = useToast()
+  const [formAbierto, setFormAbierto] = useState(false)
+  const [tipo, setTipo] = useState('contacto')
+  const [descripcion, setDescripcion] = useState('')
+  const [fecha, setFecha] = useState(() => new Date().toISOString().split('T')[0])
+  const [guardando, setGuardando] = useState(false)
+
+  const agregarEvento = async (e) => {
+    e.preventDefault()
+    if (!descripcion.trim() || !fecha) return
+    setGuardando(true)
+    try {
+      await onAgregar({ tipo, descripcion: descripcion.trim(), fecha })
+      setDescripcion('')
+      setTipo('contacto')
+      setFecha(new Date().toISOString().split('T')[0])
+      setFormAbierto(false)
+    } catch {
+      toast.error('Error al registrar el evento')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const eliminarEvento = async (id) => {
+    try { await onEliminar(id) } catch { toast.error('Error al eliminar el evento') }
+  }
+
+  const eventosOrdenados = [...eventos].sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+
+  return (
+    <div style={{ background: '#0F0F0F', border: '1px solid #1A1A1A', borderRadius: 10, padding: 20 }}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <History size={14} style={{ color: '#5B8DEF' }} aria-hidden="true" />
+          <span className="font-syne font-bold" style={{ color: 'var(--color-text-primary)', fontSize: 13, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            Historial de Contexto
+          </span>
+        </div>
+        <button
+          onClick={() => setFormAbierto(v => !v)}
+          className="flex items-center gap-1 font-dm text-xs px-2.5 py-1 transition-all"
+          style={{ background: formAbierto ? 'rgba(0,255,106,0.1)' : '#111', border: '1px solid #2A2A2A', borderRadius: 6, color: formAbierto ? '#00FF6A' : '#666' }}
+        >
+          <Plus size={11} aria-hidden="true" /> Nuevo evento
+        </button>
+      </div>
+
+      {formAbierto && (
+        <form
+          onSubmit={agregarEvento}
+          className="mb-4 p-3 space-y-2"
+          style={{ background: 'rgba(91,141,239,0.04)', border: '1px solid rgba(91,141,239,0.15)', borderRadius: 8 }}
+        >
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-dm mb-1" style={{ color: '#555' }}>Tipo de evento</label>
+              <select value={tipo} onChange={e => setTipo(e.target.value)} className="input text-sm w-full" style={{ fontSize: 13 }}>
+                {Object.entries(EVENTO_TIPOS).map(([key, v]) => (
+                  <option key={key} value={key}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-dm mb-1" style={{ color: '#555' }}>Fecha</label>
+              <input
+                type="date" required
+                value={fecha}
+                onChange={e => setFecha(e.target.value)}
+                className="input text-sm w-full"
+                style={{ fontSize: 13 }}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-dm mb-1" style={{ color: '#555' }}>Descripción</label>
+            <input
+              type="text" required maxLength={200}
+              placeholder="ej. Llamó para pedir plazo adicional"
+              value={descripcion}
+              onChange={e => setDescripcion(e.target.value)}
+              className="input text-sm w-full"
+              style={{ fontSize: 13 }}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={() => setFormAbierto(false)} className="btn-ghost text-xs px-3 py-1.5">Cancelar</button>
+            <button type="submit" disabled={!descripcion.trim() || guardando} className="btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5">
+              {guardando ? <Loader2 size={11} className="animate-spin" aria-hidden="true" /> : <Check size={11} aria-hidden="true" />}
+              Agregar
+            </button>
+          </div>
+        </form>
+      )}
+
+      {eventosOrdenados.length === 0 ? (
+        <p className="font-dm text-sm text-center py-4" style={{ color: '#444' }}>
+          Sin eventos registrados. Agrega pagos, incumplimientos, promesas, contactos o novedades.
+        </p>
+      ) : (
+        <div>
+          {eventosOrdenados.map((ev, i) => {
+            const meta = EVENTO_TIPOS[ev.tipo] || EVENTO_TIPOS.novedad
+            const esUltimo = i === eventosOrdenados.length - 1
+            const fechaFmt = new Date(ev.fecha + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
+            return (
+              <div key={ev.id} className="flex gap-3" style={{ paddingBottom: esUltimo ? 0 : 16 }}>
+                <div className="flex flex-col items-center flex-shrink-0" style={{ width: 10 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: meta.color, boxShadow: `0 0 0 3px ${meta.color}22`, flexShrink: 0 }} />
+                  {!esUltimo && <div style={{ width: 2, flex: 1, background: '#1A1A1A', marginTop: 4 }} />}
+                </div>
+                <div className="flex-1 min-w-0 group" style={{ paddingBottom: 2 }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-dm font-medium" style={{ color: meta.color, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        {meta.label}
+                      </span>
+                      <span className="font-dm" style={{ color: '#444', fontSize: 11 }}>{fechaFmt}</span>
+                    </div>
+                    <button
+                      onClick={() => eliminarEvento(ev.id)}
+                      title="Eliminar evento"
+                      className="flex items-center justify-center flex-shrink-0 transition-opacity opacity-0 group-hover:opacity-100"
+                      style={{ width: 20, height: 20, borderRadius: 4, border: '1px solid #222', background: 'transparent', color: '#444' }}
+                    >
+                      <Trash2 size={10} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <p className="font-dm mt-1" style={{ color: 'var(--color-text-primary)', fontSize: 13 }}>{ev.descripcion}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════
    PANTALLA COMPLETA DEL SOCIO
 ══════════════════════════════════════════════ */
 function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeInicial = '' }) {
@@ -1435,6 +1705,27 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
   const [formPromesa, setFormPromesa] = useState(false)
   const [promesaForm, setPromesaForm] = useState({ monto: '', fecha: '', nota: '' })
   const [guardandoPromesa, setGuardandoPromesa] = useState(false)
+
+  const [eventosHistorial, setEventosHistorial] = useState([])
+
+  const cargarHistorial = useCallback(async () => {
+    try {
+      const { data } = await api.get(`/api/historial/?socio_id=${socio.id}`)
+      setEventosHistorial(data)
+    } catch {}
+  }, [socio.id])
+
+  useEffect(() => { cargarHistorial() }, [cargarHistorial])
+
+  const agregarEventoHistorial = async (evento) => {
+    const { data } = await api.post('/api/historial/', { socio_id: socio.id, ...evento })
+    setEventosHistorial(prev => [data, ...prev])
+  }
+
+  const eliminarEventoHistorial = async (id) => {
+    await api.delete(`/api/historial/${id}`)
+    setEventosHistorial(prev => prev.filter(e => e.id !== id))
+  }
 
   const cargarPromesas = useCallback(async () => {
     try {
@@ -1466,11 +1757,11 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
 
   const score = detalle?.score_riesgo ?? socio.score_riesgo ?? 0
   const nivel = detalle?.nivel_riesgo ?? socio.nivel_riesgo ?? 'bajo'
-  const color = NIVEL_COLOR[nivel] || '#00E5A0'
+  const color = NIVEL_COLOR[nivel] || '#00FF6A'
   const recomendacion = {
     alto:  { texto: 'Contacto urgente', desc: 'Llamar al socio hoy. Iniciar proceso formal de cobranza antes de que la mora avance.', color: '#EF4444' },
     medio: { texto: 'Monitorear de cerca', desc: 'Enviar recordatorio preventivo. Revisar en los próximos 15 días.', color: '#F59E0B' },
-    bajo:  { texto: 'Sin acción necesaria', desc: 'Perfil saludable. Seguimiento periódico estándar es suficiente.', color: '#00E5A0' },
+    bajo:  { texto: 'Sin acción necesaria', desc: 'Perfil saludable. Seguimiento periódico estándar es suficiente.', color: '#00FF6A' },
   }[nivel] || {}
 
   const partes = (socio.nombre_completo || '').split(' ')
@@ -1523,9 +1814,9 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
               else toast.error('Sin teléfono registrado')
             }}
             className="flex items-center gap-1.5 text-xs font-dm py-1.5 px-3 transition-all"
-            style={{ background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.15)', color: '#00E5A0', borderRadius: 6 }}
-            onMouseOver={e => e.currentTarget.style.background = 'rgba(0,229,160,0.12)'}
-            onMouseOut={e => e.currentTarget.style.background = 'rgba(0,229,160,0.06)'}
+            style={{ background: 'rgba(0,255,106,0.06)', border: '1px solid rgba(0,255,106,0.15)', color: '#00FF6A', borderRadius: 6 }}
+            onMouseOver={e => e.currentTarget.style.background = 'rgba(0,255,106,0.12)'}
+            onMouseOut={e => e.currentTarget.style.background = 'rgba(0,255,106,0.06)'}
           >
             <Phone size={12} aria-hidden="true" /> Llamar
           </button>
@@ -1558,7 +1849,7 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
           <div className="flex items-center gap-4 flex-1 min-w-0" style={{ minWidth: 220 }}>
             <div
               className="flex-shrink-0 flex items-center justify-center font-syne font-bold"
-              style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(0,229,160,0.15)', color: '#00E5A0', fontSize: 22, border: '2px solid rgba(0,229,160,0.3)' }}
+              style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(0,255,106,0.15)', color: '#00FF6A', fontSize: 22, border: '2px solid rgba(0,255,106,0.3)' }}
               aria-hidden="true"
             >
               {inics}
@@ -1578,7 +1869,7 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
           {/* 3 métricas */}
           <div className="flex items-stretch" style={{ borderLeft: '1px solid #1A1A1A', borderRight: '1px solid #1A1A1A' }}>
             {[
-              { label: 'Saldo', val: fmt(socio.saldo_pendiente), valColor: '#00E5A0', isBadge: false },
+              { label: 'Saldo', val: fmt(socio.saldo_pendiente), valColor: '#00FF6A', isBadge: false },
               { label: 'Días mora', val: `${socio.dias_mora}d`, valColor: diasColor, isBadge: false },
               { label: 'Estado', isBadge: true },
             ].map((m, i, arr) => (
@@ -1606,7 +1897,7 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
           <div className="flex flex-col items-center flex-shrink-0">
             {cargando ? (
               <div className="flex items-center justify-center" style={{ width: 140, height: 78 }}>
-                <Loader2 size={22} className="animate-spin" style={{ color: '#00E5A0' }} />
+                <Loader2 size={22} className="animate-spin" style={{ color: '#00FF6A' }} />
               </div>
             ) : (
               <>
@@ -1680,7 +1971,7 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: 'Tipo de crédito', val: socio.tipo_credito || '—', valColor: 'var(--color-text-primary)' },
-                    { label: 'Saldo pendiente', val: fmt(socio.saldo_pendiente), valColor: '#00E5A0' },
+                    { label: 'Saldo pendiente', val: fmt(socio.saldo_pendiente), valColor: '#00FF6A' },
                     { label: 'Días en mora', val: `${socio.dias_mora} días`, valColor: diasColor },
                     { label: 'Estado de mora', val: moraBadge.label, valColor: moraBadge.color },
                   ].map(m => (
@@ -1704,7 +1995,7 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
                   }}
                   className="flex-1 flex items-center justify-center gap-2 py-3 font-dm text-sm transition-all"
                   style={{ background: '#111', border: '1px solid #222', borderRadius: 8, color: 'var(--color-text-primary)' }}
-                  onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'}
+                  onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(0,255,106,0.4)'}
                   onMouseOut={e => e.currentTarget.style.borderColor = '#222'}
                 >
                   <Phone size={15} aria-hidden="true" /> Llamar
@@ -1727,7 +2018,7 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
                   onClick={() => setModalCorreo(true)}
                   className="flex-1 flex items-center justify-center gap-2 py-3 font-dm text-sm transition-all"
                   style={{ background: '#111', border: '1px solid #222', borderRadius: 8, color: 'var(--color-text-primary)' }}
-                  onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(0,229,160,0.4)'}
+                  onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(0,255,106,0.4)'}
                   onMouseOut={e => e.currentTarget.style.borderColor = '#222'}
                 >
                   <Mail size={15} aria-hidden="true" /> Enviar cobranza
@@ -1752,7 +2043,7 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
                 <button
                   onClick={() => { setFormPromesa(v => !v); setPromesaForm({ monto: '', fecha: '', nota: '' }) }}
                   className="flex items-center gap-1 font-dm text-xs px-2.5 py-1 transition-all"
-                  style={{ background: formPromesa ? 'rgba(0,229,160,0.1)' : '#111', border: '1px solid #2A2A2A', borderRadius: 6, color: formPromesa ? '#00E5A0' : '#666' }}
+                  style={{ background: formPromesa ? 'rgba(0,255,106,0.1)' : '#111', border: '1px solid #2A2A2A', borderRadius: 6, color: formPromesa ? '#00FF6A' : '#666' }}
                 >
                   <Plus size={11} aria-hidden="true" /> Nueva promesa
                 </button>
@@ -1836,8 +2127,8 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
                 <div className="space-y-2">
                   {promesas.map(p => {
                     const esVencida = p.vencida
-                    const color = p.estado === 'cumplida' ? '#00E5A0' : p.estado === 'incumplida' ? '#FF4455' : esVencida ? '#FF6B7A' : '#FFB800'
-                    const bgColor = p.estado === 'cumplida' ? 'rgba(0,229,160,0.06)' : p.estado === 'incumplida' ? 'rgba(255,68,85,0.06)' : esVencida ? 'rgba(255,68,85,0.06)' : 'rgba(255,184,0,0.06)'
+                    const color = p.estado === 'cumplida' ? '#00FF6A' : p.estado === 'incumplida' ? '#FF4455' : esVencida ? '#FF6B7A' : '#FFB800'
+                    const bgColor = p.estado === 'cumplida' ? 'rgba(0,255,106,0.06)' : p.estado === 'incumplida' ? 'rgba(255,68,85,0.06)' : esVencida ? 'rgba(255,68,85,0.06)' : 'rgba(255,184,0,0.06)'
                     const etiqueta = p.estado === 'cumplida' ? 'Cumplida' : p.estado === 'incumplida' ? 'No cumplida' : esVencida ? 'Vencida' : `En ${p.dias_restantes}d`
                     const fecha = new Date(p.fecha_prometida + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
                     return (
@@ -1864,7 +2155,7 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
                               }}
                               title="Marcar cumplida"
                               className="flex items-center justify-center transition-all"
-                              style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(0,229,160,0.3)', background: 'rgba(0,229,160,0.08)', color: '#00E5A0' }}
+                              style={{ width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(0,255,106,0.3)', background: 'rgba(0,255,106,0.08)', color: '#00FF6A' }}
                             >
                               <Check size={12} aria-hidden="true" />
                             </button>
@@ -1905,12 +2196,22 @@ function SocioDetalle({ socio: socioProp, onVolver, onSocioActualizado, mensajeI
               )}
             </div>
 
+            {/* Card 5 — Historial de Contexto */}
+            <HistorialContexto eventos={eventosHistorial} onAgregar={agregarEventoHistorial} onEliminar={eliminarEventoHistorial} />
+
           </div>
 
           {/* Columna derecha — Chat sticky */}
           <div className="lg:col-span-2">
             <div id="chat-whatsapp-seccion" style={{ position: 'sticky', top: 24, alignSelf: 'start' }}>
-              <ChatWhatsApp socio={socio} mensajeInicial={mensajeInicial} chatInputRef={chatInputRef} highlighted={chatHighlight} />
+              <ChatWhatsApp
+                socio={socio}
+                mensajeInicial={mensajeInicial}
+                chatInputRef={chatInputRef}
+                highlighted={chatHighlight}
+                historialEventos={eventosHistorial}
+                perfilRiesgo={{ score, dias_mora: socio.dias_mora, monto: socio.saldo_pendiente }}
+              />
             </div>
           </div>
 
@@ -2151,7 +2452,7 @@ export default function Socios() {
                           aria-label={`Ver perfil completo de ${s.nombre_completo}`}
                         >
                           <p
-                            className="font-medium text-sm font-dm transition-colors group-hover:text-[#00E5A0]"
+                            className="font-medium text-sm font-dm transition-colors group-hover:text-[#00FF6A]"
                             style={{ color: 'var(--color-text-primary)' }}
                           >
                             {s.nombre_completo}

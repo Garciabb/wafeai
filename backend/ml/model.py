@@ -96,6 +96,7 @@ class WafeAIPredictor:
         dias_mora = data.get("dias_mora", 0)
         ratio = data.get("ratio_cumplimiento", 1.0)
         porcentaje_deuda = data.get("porcentaje_deuda", 0.5)
+        num_creditos = data.get("num_creditos", 1)
 
         if dias_mora > 90:
             score += 50
@@ -106,6 +107,13 @@ class WafeAIPredictor:
 
         score += (1 - ratio) * 30
         score += porcentaje_deuda * 20
+
+        # Señal predictiva: varios créditos simultáneos + alta concentración de
+        # deuda + mal historial de pago = sobreendeudamiento detectable ANTES
+        # de que aparezca la mora (el caso que vende la página de Predicción IA).
+        if num_creditos >= 3 and porcentaje_deuda > 0.7 and ratio < 0.6:
+            score += 40
+
         score = min(score, 99)
 
         nivel = self._calcular_nivel(score)
@@ -133,6 +141,9 @@ class WafeAIPredictor:
             factores.append("Alta carga de deuda")
         if data.get("num_creditos", 1) >= 3:
             factores.append("Múltiples créditos activos")
+        if (data.get("num_creditos", 1) >= 3 and data.get("porcentaje_deuda", 0) > 0.7
+                and data.get("ratio_cumplimiento", 1) < 0.6):
+            factores.append("Sobreendeudamiento: alta deuda concentrada en varios créditos")
         if not factores and score < 40:
             factores.append("Perfil de pago saludable")
         return factores

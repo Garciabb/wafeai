@@ -45,3 +45,4 @@ class Socio(Base):
     alertas = relationship("Alerta", back_populates="socio", lazy="dynamic")
     comunicaciones = relationship("Comunicacion", back_populates="socio", lazy="dynamic")
     promesas_pago = relationship("PromesaPago", back_populates="socio", lazy="dynamic")
+    eventos_historial = relationship("EventoHistorial", back_populates="socio", lazy="dynamic")

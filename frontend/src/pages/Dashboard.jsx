@@ -66,7 +66,7 @@ export default function Dashboard() {
   const perdidaEvitable = riesgoAlto.reduce((sum, s) => sum + (s.saldo_pendiente || 0), 0)
 
   const pieData = distribucion ? [
-    { name: 'Bajo',  value: distribucion.bajo.cantidad,  color: '#00E5A0' },
+    { name: 'Bajo',  value: distribucion.bajo.cantidad,  color: '#00FF6A' },
     { name: 'Medio', value: distribucion.medio.cantidad, color: '#FFB800' },
     { name: 'Alto',  value: distribucion.alto.cantidad,  color: '#FF4455' },
   ] : []
@@ -158,9 +158,9 @@ export default function Dashboard() {
           <button
             onClick={exportarReporte}
             className="flex items-center gap-3 px-5 py-4 text-sm font-dm font-medium transition-colors"
-            style={{ background: 'rgba(0,229,160,0.06)', border: '1px solid rgba(0,229,160,0.2)', borderRadius: 8, color: '#00E5A0' }}
-            onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,229,160,0.12)' }}
-            onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,229,160,0.06)' }}
+            style={{ background: 'rgba(0,255,106,0.06)', border: '1px solid rgba(0,255,106,0.2)', borderRadius: 8, color: '#00FF6A' }}
+            onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,255,106,0.12)' }}
+            onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,255,106,0.06)' }}
           >
             <FileDown size={18} aria-hidden="true" />
             Exportar reporte CSV
@@ -263,7 +263,7 @@ export default function Dashboard() {
                 {distribucion && (
                   <dl className="space-y-2 mt-2">
                     {[
-                      { label: 'Bajo',  val: distribucion.bajo,  color: '#00E5A0' },
+                      { label: 'Bajo',  val: distribucion.bajo,  color: '#00FF6A' },
                       { label: 'Medio', val: distribucion.medio, color: '#FFB800' },
                       { label: 'Alto',  val: distribucion.alto,  color: '#FF4455' },
                     ].map(({ label, val, color }) => (

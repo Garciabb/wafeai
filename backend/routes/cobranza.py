@@ -45,7 +45,7 @@ async def enviar_email_socio(
     if not socio:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
 
-    credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).first()
+    credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).order_by(Credito.saldo_pendiente.desc()).first()
     dias = socio.dias_mora_maximo
     dias_mora_color = "#CC0000" if dias > 30 else "#E67E00" if dias > 0 else "#00A67E"
     variables = {
@@ -96,7 +96,7 @@ async def enviar_whatsapp_socio(
     if not socio.telefono or socio.telefono.strip() in ('', '0000000000'):
         raise HTTPException(status_code=400, detail="El socio no tiene un número de teléfono válido registrado")
 
-    credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).first()
+    credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).order_by(Credito.saldo_pendiente.desc()).first()
     monto_str = f"${credito.saldo_pendiente:,.0f} COP" if credito else "$0 COP"
 
     mensaje = data.mensaje_personalizado or generar_mensaje_cobranza(
@@ -144,7 +144,7 @@ async def lanzar_campana(
     enviados, fallidos, sin_telefono = 0, 0, 0
 
     for socio in socios:
-        credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).first()
+        credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).order_by(Credito.saldo_pendiente.desc()).first()
         dias = socio.dias_mora_maximo
         variables = {
             "cooperativa": "Cooperativa Financiera",

@@ -10,7 +10,7 @@
   --color-border:    #1E1E1E;
   --color-text-primary:   #F0F0EB;
   --color-text-secondary: #888888;
-  --color-accent:    #00E5A0;
+  --color-accent:    #00FF6A;
   --color-danger:    #FF4455;
   --color-warning:   #FFB800;
 }
@@ -80,7 +80,7 @@
     @apply inline-flex items-center justify-center gap-2
            font-dm font-semibold text-sm
            px-5 py-2.5
-           bg-[#00E5A0] text-[#080808]
+           bg-[#00FF6A] text-[#080808]
            transition-colors duration-150
            disabled:opacity-40 disabled:cursor-not-allowed;
     border-radius: 4px;
@@ -131,7 +131,7 @@
   .input:focus {
     outline: none;
     border-color: var(--color-accent);
-    box-shadow: 0 0 0 2px rgba(0,229,160,0.12);
+    box-shadow: 0 0 0 2px rgba(0,255,106,0.12);
   }
   .input[aria-invalid="true"] {
     border-color: var(--color-danger);
@@ -157,9 +157,9 @@
   }
   .badge-bajo {
     @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium font-dm;
-    background: rgba(0,229,160,0.1);
+    background: rgba(0,255,106,0.1);
     color: var(--color-accent);
-    border: 1px solid rgba(0,229,160,0.2);
+    border: 1px solid rgba(0,255,106,0.2);
     border-radius: 4px;
   }
 

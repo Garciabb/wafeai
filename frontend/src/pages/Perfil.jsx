@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { User, Mail, Shield, LogOut, Save, KeyRound, Eye, EyeOff, CheckCircle } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import api from '../api/client'
 
 const ROL_LABEL = { admin: 'Administrador', analista: 'Analista' }
-const ROL_COLOR = { admin: { bg: 'rgba(0,229,160,0.1)', color: '#00E5A0' }, analista: { bg: 'rgba(255,184,0,0.1)', color: '#FFB800' } }
+const ROL_COLOR = { admin: { bg: 'rgba(0,255,106,0.1)', color: '#00FF6A' }, analista: { bg: 'rgba(255,184,0,0.1)', color: '#FFB800' } }
 
 function iniciales(nombre, apellido) {
   return `${(nombre?.[0] || '').toUpperCase()}${(apellido?.[0] || '').toUpperCase()}` || 'U'
@@ -133,7 +133,7 @@ export default function Perfil() {
             {/* Avatar */}
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold font-syne flex-shrink-0"
-              style={{ background: 'rgba(0,229,160,0.12)', color: '#00E5A0', border: '2px solid rgba(0,229,160,0.2)' }}
+              style={{ background: 'rgba(0,255,106,0.12)', color: '#00FF6A', border: '2px solid rgba(0,255,106,0.2)' }}
               aria-hidden="true"
             >
               {iniciales(datos?.nombre, datos?.apellido)}
@@ -242,7 +242,7 @@ export default function Perfil() {
           {pwExito && (
             <div
               className="flex items-center gap-2 px-3 py-2.5 mb-4 text-xs font-dm"
-              style={{ background: 'rgba(0,229,160,0.08)', border: '1px solid rgba(0,229,160,0.2)', borderRadius: 6, color: '#00E5A0' }}
+              style={{ background: 'rgba(0,255,106,0.08)', border: '1px solid rgba(0,255,106,0.2)', borderRadius: 6, color: '#00FF6A' }}
               role="status"
             >
               <CheckCircle size={14} aria-hidden="true" />

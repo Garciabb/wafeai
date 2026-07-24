@@ -117,7 +117,7 @@ def recalcular_todos(
     actualizados = 0
 
     for socio in socios:
-        credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).first()
+        credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).order_by(Credito.saldo_pendiente.desc()).first()
         pagos_totales = socio.pagos.count()
         pagos_a_tiempo = socio.pagos.filter(Pago.estado == EstadoPago.pagado, Pago.dias_retraso <= 5).count()
 
@@ -155,7 +155,7 @@ def entrenar_modelo(
 
     datos_entrenamiento = []
     for socio in socios:
-        credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).first()
+        credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).order_by(Credito.saldo_pendiente.desc()).first()
         pagos_totales = socio.pagos.count()
         pagos_a_tiempo = socio.pagos.filter(Pago.estado == EstadoPago.pagado, Pago.dias_retraso <= 5).count()
 

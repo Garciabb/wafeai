@@ -67,15 +67,15 @@ export default function Prediccion() {
   const scoreColor = resultado
     ? resultado.nivel_riesgo === 'alto' ? '#EF4444'
     : resultado.nivel_riesgo === 'medio' ? '#F59E0B'
-    : '#00E5A0'
-    : '#00E5A0'
+    : '#00FF6A'
+    : '#00FF6A'
 
   return (
     <div className="p-6 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold font-syne flex items-center gap-3" style={{ color: 'var(--color-text-primary)' }}>
-            <Brain size={20} className="text-[#00E5A0]" aria-hidden="true" /> Predicción IA
+            <Brain size={20} className="text-[#00FF6A]" aria-hidden="true" /> Predicción IA
           </h1>
           <p className="font-dm text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>Modelo Gradient Boosting — Riesgo de incumplimiento crediticio</p>
         </div>
@@ -92,7 +92,7 @@ export default function Prediccion() {
       {recalcMsg && (
         <div className={`mb-6 p-4 rounded-lg border text-sm font-dm flex items-center gap-2 ${
           recalcMsg.tipo === 'ok'
-            ? 'bg-[#00E5A0]/10 border-[#00E5A0]/20 text-[#00E5A0]'
+            ? 'bg-[#00FF6A]/10 border-[#00FF6A]/20 text-[#00FF6A]'
             : 'bg-red-500/10 border-red-500/20 text-red-400'
         }`}>
           {recalcMsg.tipo === 'ok' ? <CheckCircle size={15} /> : <AlertTriangle size={15} />}
@@ -101,10 +101,10 @@ export default function Prediccion() {
       )}
 
       {/* Texto explicativo */}
-      <div className="mb-6 px-4 py-3 rounded-lg text-sm font-dm" style={{ background: 'rgba(0,229,160,0.04)', border: '1px solid rgba(0,229,160,0.12)', color: '#888' }}>
+      <div className="mb-6 px-4 py-3 rounded-lg text-sm font-dm" style={{ background: 'rgba(0,255,106,0.04)', border: '1px solid rgba(0,255,106,0.12)', color: '#888' }}>
         <span className="text-[#F0F0EB] font-medium">¿Cómo funciona?</span>{' '}
         El modelo analiza el comportamiento crediticio del {t.socio} — historial de pagos, deuda acumulada, antigüedad — y predice la probabilidad de incumplimiento en los próximos 60 días,{' '}
-        <span className="text-[#00E5A0]">incluso cuando el {t.socio} está al día</span>. Así puedes intervenir antes de que ocurra la {t.mora}.
+        <span className="text-[#00FF6A]">incluso cuando el {t.socio} está al día</span>. Así puedes intervenir antes de que ocurra la {t.mora}.
       </div>
 
       <div className="grid grid-cols-2 gap-8">
@@ -113,8 +113,8 @@ export default function Prediccion() {
           <h2 className="font-syne font-semibold text-[#F0F0EB] mb-1">Calcular score manual</h2>
           <p className="text-[#555] text-xs font-dm mb-5">Ingresa los datos del {t.socio} para predecir su riesgo</p>
 
-          <div className="mb-4 px-4 py-3 rounded-r-md text-xs font-dm" style={{ borderLeft: '3px solid #00E5A0', background: 'rgba(0,229,160,0.04)', color: '#888' }}>
-            <span className="font-semibold" style={{ color: '#00E5A0' }}>Demo predictivo:</span>{' '}
+          <div className="mb-4 px-4 py-3 rounded-r-md text-xs font-dm" style={{ borderLeft: '3px solid #00FF6A', background: 'rgba(0,255,106,0.04)', color: '#888' }}>
+            <span className="font-semibold" style={{ color: '#00FF6A' }}>Demo predictivo:</span>{' '}
             este {t.socio} tiene <strong style={{ color: 'var(--color-text-primary)' }}>0 días de {t.mora}</strong> — está al día. El modelo detecta señales conductuales de riesgo futuro.
           </div>
 
@@ -157,12 +157,12 @@ export default function Prediccion() {
               </div>
               <div className="col-span-2">
                 <label className="block text-xs text-[#888] font-dm mb-1.5">% Deuda vs original (0-1)</label>
-                <input type="range" className="w-full accent-[#00E5A0]" min="0" max="1" step="0.05"
+                <input type="range" className="w-full accent-[#00FF6A]" min="0" max="1" step="0.05"
                   value={form.porcentaje_deuda}
                   onChange={e => setForm(p => ({ ...p, porcentaje_deuda: e.target.value }))} />
                 <div className="flex justify-between text-xs text-[#555] font-dm mt-1">
                   <span>0%</span>
-                  <span className="text-[#00E5A0]">{(form.porcentaje_deuda * 100).toFixed(0)}%</span>
+                  <span className="text-[#00FF6A]">{(form.porcentaje_deuda * 100).toFixed(0)}%</span>
                   <span>100%</span>
                 </div>
               </div>
@@ -259,7 +259,7 @@ export default function Prediccion() {
                     ? 'bg-red-500/10 border-red-500/20 text-red-300'
                     : resultado.nivel_riesgo === 'medio'
                     ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-300'
-                    : 'bg-[#00E5A0]/10 border-[#00E5A0]/20 text-[#00E5A0]'
+                    : 'bg-[#00FF6A]/10 border-[#00FF6A]/20 text-[#00FF6A]'
                 }`}>
                   <strong>Recomendación: </strong>
                   {resultado.nivel_riesgo === 'alto'
@@ -303,11 +303,11 @@ export default function Prediccion() {
         <h2 className="font-syne font-semibold text-[#F0F0EB] mb-4">Metodología del Modelo</h2>
         <div className="grid grid-cols-3 gap-6 text-sm font-dm">
           <div>
-            <h3 className="text-[#00E5A0] font-medium mb-2">Algoritmo</h3>
+            <h3 className="text-[#00FF6A] font-medium mb-2">Algoritmo</h3>
             <p className="text-[#888]">Gradient Boosting Classifier entrenado con datos históricos de la cooperativa. Actualizable desde la BD.</p>
           </div>
           <div>
-            <h3 className="text-[#00E5A0] font-medium mb-2">Variables</h3>
+            <h3 className="text-[#00FF6A] font-medium mb-2">Variables</h3>
             <ul className="text-[#888] space-y-1">
               {['Días en mora', 'Saldo pendiente', 'Historial de pagos', 'Créditos activos', 'Tipo de crédito'].map(v => (
                 <li key={v} className="flex items-center gap-1.5">
@@ -317,7 +317,7 @@ export default function Prediccion() {
             </ul>
           </div>
           <div>
-            <h3 className="text-[#00E5A0] font-medium mb-2">Umbrales</h3>
+            <h3 className="text-[#00FF6A] font-medium mb-2">Umbrales</h3>
             <div className="space-y-1.5">
               <div className="flex items-center gap-2"><span className="badge-bajo">BAJO</span><span className="text-[#888]">0% — 40%</span></div>
               <div className="flex items-center gap-2"><span className="badge-medio">MEDIO</span><span className="text-[#888]">40% — 70%</span></div>

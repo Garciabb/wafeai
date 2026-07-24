@@ -4,8 +4,8 @@ export default function KPICard({ titulo, valor, subtitulo, icono: Icono, acento
     <article
       className="card"
       style={acento ? {
-        borderColor: 'rgba(0,229,160,0.3)',
-        background: 'rgba(0,229,160,0.04)',
+        borderColor: 'rgba(0,255,106,0.3)',
+        background: 'rgba(0,255,106,0.04)',
         minHeight: 120,
       } : { minHeight: 120 }}
       aria-label={`${titulo}: ${valor}`}
@@ -18,7 +18,7 @@ export default function KPICard({ titulo, valor, subtitulo, icono: Icono, acento
           <div
             className="p-2"
             style={{
-              background: acento ? 'rgba(0,229,160,0.1)' : 'var(--color-surface-2)',
+              background: acento ? 'rgba(0,255,106,0.1)' : 'var(--color-surface-2)',
               borderRadius: 6,
             }}
             aria-hidden="true"

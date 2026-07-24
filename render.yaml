@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: wafeai-backend
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./wafeai.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "120"
+      - key: DEBUG
+        value: "False"
+      # URL del frontend desplegado — actualiza este valor manualmente en el
+      # dashboard de Render con la URL real del servicio wafeai-frontend
+      # (necesario para que CORS deje pasar las peticiones del frontend).
+      - key: FRONTEND_URL
+        value: "https://wafeai-frontend.onrender.com"
+      # Secretos — se configuran a mano en el dashboard de Render (nunca en este archivo)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        value: "WafeAI <onboarding@resend.dev>"
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_ID
+        sync: false
+      - key: WHATSAPP_API_VERSION
+        value: v21.0
+
+  - type: web
+    name: wafeai-frontend
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      # URL del backend desplegado — actualiza este valor con la URL real del
+      # servicio wafeai-backend y vuelve a desplegar (Vite la incrusta en el
+      # build, así que un cambio de valor requiere rebuild, no solo restart).
+      - key: VITE_API_URL
+        value: "https://wafeai-backend.onrender.com"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
