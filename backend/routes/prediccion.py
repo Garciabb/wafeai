@@ -8,6 +8,7 @@ from models.credito import Credito, EstadoCredito
 from models.alerta import Alerta, TipoAlerta, PrioridadAlerta
 from models.pago import Pago, EstadoPago
 from ml.model import predictor
+from services.scoring import calcular_y_guardar_score
 from routes.auth import get_usuario_actual
 from models.user import Usuario
 
@@ -49,39 +50,9 @@ def predecir_socio(
     if not socio:
         raise HTTPException(status_code=404, detail="Socio no encontrado")
 
-    credito = socio.creditos.filter(
-        Credito.estado == EstadoCredito.activo
-    ).order_by(Credito.saldo_pendiente.desc()).first()
-
-    pagos_totales = socio.pagos.count()
-    pagos_a_tiempo = socio.pagos.filter(
-        Pago.estado == EstadoPago.pagado,
-        Pago.dias_retraso <= 5,
-    ).count()
-
-    ratio_cumplimiento = (pagos_a_tiempo / pagos_totales) if pagos_totales > 0 else 1.0
-    num_creditos = socio.creditos.filter(Credito.estado == EstadoCredito.activo).count()
-
-    datos = {
-        "dias_mora": credito.dias_mora if credito else socio.dias_mora_maximo,
-        "monto_pendiente": credito.saldo_pendiente if credito else 0,
-        "ratio_cumplimiento": ratio_cumplimiento,
-        "num_creditos": num_creditos or 1,
-        "tipo_credito": credito.tipo if credito else "consumo",
-        "meses_cliente": 12,
-        "porcentaje_deuda": (
-            (credito.saldo_pendiente / credito.monto_original)
-            if credito and credito.monto_original > 0
-            else 0.5
-        ),
-    }
-
-    resultado = predictor.predecir(datos)
-
     # Actualizar score en BD
     score_anterior = socio.score_riesgo
-    socio.score_riesgo = resultado["score_riesgo"]
-    socio.nivel_riesgo = resultado["nivel_riesgo"]
+    resultado = calcular_y_guardar_score(socio, db)
 
     # Crear alerta si subió a riesgo alto
     if resultado["nivel_riesgo"] == "alto" and score_anterior < 70:
@@ -117,23 +88,7 @@ def recalcular_todos(
     actualizados = 0
 
     for socio in socios:
-        credito = socio.creditos.filter(Credito.estado == EstadoCredito.activo).order_by(Credito.saldo_pendiente.desc()).first()
-        pagos_totales = socio.pagos.count()
-        pagos_a_tiempo = socio.pagos.filter(Pago.estado == EstadoPago.pagado, Pago.dias_retraso <= 5).count()
-
-        datos = {
-            "dias_mora": credito.dias_mora if credito else socio.dias_mora_maximo,
-            "monto_pendiente": credito.saldo_pendiente if credito else 0,
-            "ratio_cumplimiento": (pagos_a_tiempo / pagos_totales) if pagos_totales > 0 else 1.0,
-            "num_creditos": socio.creditos.filter(Credito.estado == EstadoCredito.activo).count() or 1,
-            "tipo_credito": credito.tipo if credito else "consumo",
-            "meses_cliente": 12,
-            "porcentaje_deuda": (credito.saldo_pendiente / credito.monto_original if credito and credito.monto_original > 0 else 0.5),
-        }
-
-        resultado = predictor.predecir(datos)
-        socio.score_riesgo = resultado["score_riesgo"]
-        socio.nivel_riesgo = resultado["nivel_riesgo"]
+        calcular_y_guardar_score(socio, db)
         actualizados += 1
 
     db.commit()

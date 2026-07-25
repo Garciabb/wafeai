@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from database import get_db
 from models.socio import Socio, NivelRiesgo, EstadoMora
 from models.credito import Credito, EstadoCredito, TipoCredito
+from services.scoring import calcular_y_guardar_score
 from routes.auth import get_usuario_actual
 from models.user import Usuario
 
@@ -161,6 +162,7 @@ def crear_socio(
         raise HTTPException(status_code=400, detail="Ya existe un socio con esa cédula")
 
     socio = Socio(**data.model_dump(exclude={'monto', 'tipo_credito', 'dias_mora'}))
+    socio.dias_mora_maximo = data.dias_mora or 0
     db.add(socio)
     db.commit()
     db.refresh(socio)
@@ -188,6 +190,10 @@ def crear_socio(
         )
         db.add(credito)
         db.commit()
+
+    # Calcular score de riesgo IA real en vez de dejar el default 0.0/bajo
+    calcular_y_guardar_score(socio, db)
+    db.commit()
 
     return {"mensaje": "Socio creado exitosamente", "id": socio.id}
 
