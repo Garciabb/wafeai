@@ -29,12 +29,21 @@ export default function Login() {
   const [errs, setErrs] = useState({})
   const [apiError, setApiError] = useState(null)
   const [verPassword, setVerPassword] = useState(false)
+  const [tardando, setTardando] = useState(false)
   const emailId = useId()
   const passwordId = useId()
 
   useEffect(() => {
     if (autenticado) navigate('/', { replace: true })
   }, [autenticado, navigate])
+
+  // El backend gratuito puede "dormir" tras inactividad — si el login tarda,
+  // explicamos por qué en vez de dejar el spinner sin contexto.
+  useEffect(() => {
+    if (!cargando) { setTardando(false); return }
+    const t = setTimeout(() => setTardando(true), 4000)
+    return () => clearTimeout(t)
+  }, [cargando])
 
   const set = (k, v) => {
     setForm(p => ({ ...p, [k]: v }))
@@ -205,6 +214,11 @@ export default function Login() {
                 : <><ArrowRight size={15} aria-hidden="true" /> Ingresar</>
               }
             </button>
+            {tardando && (
+              <p className="text-xs font-dm text-center -mt-2" style={{ color: 'var(--color-text-secondary)' }} role="status" aria-live="polite">
+                Esto puede tardar unos segundos si el sistema estaba inactivo...
+              </p>
+            )}
           </form>
 
           {/* Selector de tipo de cliente — Modo Demo */}
@@ -253,8 +267,7 @@ export default function Login() {
             aria-label="Credenciales de demostración"
           >
             <p className="text-xs mb-2" style={{ color: '#555' }}>Credenciales demo:</p>
-            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>admin@wafeai.co / wafeai2026</p>
-            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>analista@wafeai.co / wafeai2026</p>
+            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>adrianaarchilaq@gmail.com / WafeAI2026</p>
           </div>
         </div>
       </div>
