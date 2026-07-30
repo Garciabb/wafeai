@@ -23,6 +23,25 @@ const fmt = (n) => {
 
 const NIVEL_COLOR = { alto: '#FF4455', medio: '#FFB800', bajo: '#00FF6A' }
 
+/* Extrae un mensaje de error legible de la respuesta de /cobranza/enviar-* .
+   El backend responde 200 incluso cuando el envío real falla (WhatsApp/email
+   caído, credenciales vencidas, etc.) — el resultado real vive en el body. */
+function extraerErrorEnvio(data) {
+  const inner = data?.detalle || {}
+  if (typeof inner.detalle === 'string') {
+    try {
+      const parsed = JSON.parse(inner.detalle)
+      const msg = parsed?.error?.error_data?.details || parsed?.error?.message
+      if (msg) return msg
+    } catch {}
+  }
+  if (inner.error) {
+    if (typeof inner.error === 'string') return inner.error
+    if (inner.error?.message) return inner.error.message
+  }
+  return 'No se pudo enviar. Verifica la configuración del canal.'
+}
+
 /* Badge pills para estado mora */
 const MORA_BADGE = {
   al_dia:          { label: 'Al día',          bg: 'rgba(0,255,106,0.1)',  border: 'rgba(0,255,106,0.2)',  color: '#00FF6A' },
@@ -631,14 +650,20 @@ function ChatWhatsApp({ socio, mensajeInicial = '', chatInputRef = null, highlig
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
     setEnviando(true)
     try {
-      await api.post('/cobranza/enviar-whatsapp', {
+      const { data } = await api.post('/cobranza/enviar-whatsapp', {
         socio_id: socio.id,
         mensaje_personalizado: texto,
       })
-      setHistorial(prev => [...prev, { texto, hora, enviado: true }])
-      toast.success('Mensaje enviado por WhatsApp ✓')
-    } catch {
-      toast.error('Error al enviar el mensaje')
+      if (data.enviado) {
+        setHistorial(prev => [...prev, { texto, hora, enviado: true }])
+        toast.success(data.detalle?.demo ? 'Mensaje enviado (modo demo) ✓' : 'Mensaje enviado por WhatsApp ✓')
+      } else {
+        setMensaje(texto)
+        toast.error(extraerErrorEnvio(data))
+      }
+    } catch (err) {
+      setMensaje(texto)
+      toast.error(err.response?.data?.detail || 'Error al enviar el mensaje')
     } finally {
       setEnviando(false)
     }
@@ -1216,15 +1241,19 @@ function ModalCorreo({ socio, onClose, onEnviado }) {
     setEnviando(true)
     setError(null)
     try {
-      await api.post('/cobranza/enviar-email', {
+      const { data } = await api.post('/cobranza/enviar-email', {
         socio_id: socio.id,
         plantilla: diasMora > 30 ? 'mora_urgente' : 'recordatorio_pago',
         asunto_custom: asunto,
         cuerpo_html_custom: cuerpo,
         cc: cc ? [cc] : [],
       })
-      toast.success(`Correo enviado a ${socio.email || socio.nombre_completo} ✓`)
-      onEnviado()
+      if (data.enviado) {
+        toast.success(data.detalle?.demo ? 'Correo enviado (modo demo) ✓' : `Correo enviado a ${socio.email || socio.nombre_completo} ✓`)
+        onEnviado()
+      } else {
+        setError(extraerErrorEnvio(data))
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Error al enviar el correo')
     } finally {
