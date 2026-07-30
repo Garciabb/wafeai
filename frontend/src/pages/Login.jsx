@@ -255,20 +255,6 @@ export default function Login() {
               ))}
             </div>
           </div>
-
-          {/* Credenciales demo */}
-          <div
-            className="mt-4 p-4 font-dm"
-            style={{
-              background: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 6,
-            }}
-            aria-label="Credenciales de demostración"
-          >
-            <p className="text-xs mb-2" style={{ color: '#555' }}>Credenciales demo:</p>
-            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>adrianaarchilaq@gmail.com / WafeAI2026</p>
-          </div>
         </div>
       </div>
     </div>

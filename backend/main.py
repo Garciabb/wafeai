@@ -17,11 +17,23 @@ async def lifespan(app: FastAPI):
     # vacía en cada redeploy/spin-up. Si no hay socios, repuebla con la demo
     # curada para que el enlace siempre funcione sin intervención manual.
     from models.socio import Socio
+    from models.user import Usuario
+    import bcrypt
     db = SessionLocal()
     try:
         if db.query(Socio).count() == 0:
             import seed
             seed.main()
+
+        # Migración puntual: la cuenta demo original (Adriana) se reemplaza
+        # por la cuenta personal del dueño de la app en cualquier BD existente.
+        cuenta_vieja = db.query(Usuario).filter(Usuario.email == "adrianaarchilaq@gmail.com").first()
+        if cuenta_vieja:
+            cuenta_vieja.email = "wafeai.jg@gmail.com"
+            cuenta_vieja.nombre = "Admin"
+            cuenta_vieja.apellido = "WafeAI"
+            cuenta_vieja.hashed_password = bcrypt.hashpw("wafe2026#".encode(), bcrypt.gensalt()).decode()
+            db.commit()
     finally:
         db.close()
 

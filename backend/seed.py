@@ -1,7 +1,6 @@
 """
 Script para poblar la base de datos de WafeAI con datos demo curados a mano:
-12 socios de una cooperativa de ahorro y crédito de Santander, Colombia,
-diseñados para la demo con Adriana Archila (gerente general).
+12 socios de una cooperativa de ahorro y crédito de Santander, Colombia.
 """
 import sys
 import os
@@ -284,7 +283,7 @@ SOCIOS = [
 
 
 def main():
-    print("[*] Iniciando seed de datos WafeAI (demo Adriana Archila / Confiar)...")
+    print("[*] Iniciando seed de datos WafeAI (demo cooperativa Santander)...")
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
@@ -301,11 +300,11 @@ def main():
         print("[+] Base de datos limpiada")
 
         # ── Usuarios ──
-        adriana = Usuario(
-            email="adrianaarchilaq@gmail.com",
-            nombre="Adriana", apellido="Archila",
+        admin_principal = Usuario(
+            email="wafeai.jg@gmail.com",
+            nombre="Admin", apellido="WafeAI",
             rol=RolUsuario.admin,
-            hashed_password=hash_password("WafeAI2026"),
+            hashed_password=hash_password("wafe2026#"),
         )
         admin = Usuario(
             email="admin@wafeai.co", nombre="Admin", apellido="WafeAI",
@@ -315,9 +314,9 @@ def main():
             email="analista@wafeai.co", nombre="María", apellido="Analista",
             rol=RolUsuario.analista, hashed_password=hash_password("wafeai2026"),
         )
-        db.add_all([adriana, admin, analista])
+        db.add_all([admin_principal, admin, analista])
         db.commit()
-        print("[+] Usuarios creados (Adriana Archila = admin principal)")
+        print("[+] Usuarios creados")
 
         resumen = []
 
@@ -361,7 +360,7 @@ def main():
             if "promesa" in s:
                 p = s["promesa"]
                 db.add(PromesaPago(
-                    socio_id=socio.id, usuario_id=adriana.id,
+                    socio_id=socio.id, usuario_id=admin_principal.id,
                     monto_prometido=p["monto"],
                     fecha_prometida=HOY + timedelta(days=p["dias_futuro"]),
                     nota=p["nota"], estado=EstadoPromesa.pendiente,
@@ -398,9 +397,9 @@ def main():
         print()
         print("=" * 70)
         print("CREDENCIALES DE ACCESO:")
-        print("  Adriana Archila (gerente): adrianaarchilaq@gmail.com / WafeAI2026")
-        print("  Admin backup:              admin@wafeai.co / wafeai2026")
-        print("  Analista:                  analista@wafeai.co / wafeai2026")
+        print("  Admin principal: wafeai.jg@gmail.com / wafe2026#")
+        print("  Admin backup:    admin@wafeai.co / wafeai2026")
+        print("  Analista:        analista@wafeai.co / wafeai2026")
         print("=" * 70)
         print()
         print(f"{'Socio':<28} {'Cédula':<10} {'Segmento':<12} {'Monto':>12} {'Cuota':>10} {'DíasMora':>8} {'Score':>6} {'Nivel':<7}")
